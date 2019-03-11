@@ -66,7 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ticker := time.NewTicker(10*time.Millisecond)
+	ticker := time.NewTicker(20*time.Millisecond)
 	for i := 0; i < *clntPtr; i++ {
 		go client(flag.Args()[0], *keyPtr, *ratePtr)
 		<- ticker.C

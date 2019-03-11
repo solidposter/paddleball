@@ -29,11 +29,11 @@ func client(addr string, key int, rate int) {
 	if err != nil {
 		log.Fatal("Failed to open UDP socket:", err)
 	}
-	go receiver(conn)
+	go receiver(conn, key)
 	sender(conn, key, rate)
 }
 
-func receiver(conn net.Conn) {
+func receiver(conn net.Conn, key int) {
 	buf := make([]byte, 65536)
 	message := payload{}
 
@@ -43,8 +43,13 @@ func receiver(conn net.Conn) {
 			log.Fatal("receiver:", err)
 		}
 		message = decode(buf,length)
-		fmt.Println("receiver:", message)
-
+		if message.GetKey() != int64(key) { 
+			fmt.Println("receiver bad key", message)
+		}
+//		fmt.Println("receiver:", message)
+//		fmt.Println("receiver id:", message.GetId())
+//		t := time.Now()
+//		fmt.Println( t.Sub(message.GetCts()) )
 	}
 }
 
@@ -56,7 +61,7 @@ func sender(conn net.Conn, key int, rate int) {
 	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
 		message.SetClientTs()
-		fmt.Println("sender:", message)
+	//	fmt.Println("sender:", message)
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {

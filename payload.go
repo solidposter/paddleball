@@ -25,6 +25,7 @@ import (
 )
 
 type payload struct {
+	Id	int64
         Key     int64
         Serial      int64
         Cts     time.Time	// client timestamp
@@ -32,8 +33,9 @@ type payload struct {
         Data    []byte		// random data
 }
 
-func newPayload(key int) payload {
+func newPayload(id int, key int) payload {
 	m :=payload{}
+	m.Id = int64(id)	// client id - identify client thread
 	m.Key = int64(key)
 	m.Data = make([]byte, 32)
 	rand.Read(m.Data)

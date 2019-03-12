@@ -68,7 +68,7 @@ func main() {
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
-		go client(flag.Args()[0], *keyPtr, *ratePtr)
+		go client(i, flag.Args()[0], *keyPtr, *ratePtr)
 		<- ticker.C
 	}
 	time.Sleep(30*time.Second)

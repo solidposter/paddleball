@@ -66,9 +66,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// start statsengine
+	rp := make(chan payload, 100)
+	go statsengine(rp, *ratePtr, *clntPtr)
+
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
-		go client(i, flag.Args()[0], *keyPtr, *ratePtr)
+		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr)
 		<- ticker.C
 	}
 	time.Sleep(30*time.Second)

@@ -24,16 +24,16 @@ import (
 	"time"
 )
 
-func client(id int, addr string, key int, rate int) {
+func client(rp chan<- payload, id int, addr string, key int, rate int) {
 	conn, err := net.Dial("udp",addr)
 	if err != nil {
 		log.Fatal("Failed to open UDP socket:", err)
 	}
-	go receiver(conn, key)
+	go receiver(rp, conn, key)
 	sender(id, conn, key, rate)
 }
 
-func receiver(conn net.Conn, key int) {
+func receiver(rp chan<- payload, conn net.Conn, key int) {
 	buf := make([]byte, 65536)
 	message := payload{}
 
@@ -46,7 +46,8 @@ func receiver(conn net.Conn, key int) {
 		if message.GetKey() != int64(key) { 
 			fmt.Println("receiver bad key", message)
 		}
-		fmt.Println("receiver:", message)
+		rp <- message
+//		fmt.Println("receiver:", message)
 //		fmt.Println("receiver id:", message.GetId())
 //		t := time.Now()
 //		fmt.Println( t.Sub(message.GetCts()) )

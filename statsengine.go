@@ -33,12 +33,12 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 			case message = <- rp:
 				pslice1 = append(pslice1,message)
 			case <- ticker.C:
-				for i,v := range pslice1 {
+				for i,v := range pslice2 {	// process old data
 					fmt.Println(i,v)
 				}
 				pslice2 = pslice1	// copy data
 				pslice1 = []payload{}	// zap slice
-				fmt.Println()
+				fmt.Println("processing done")
 		}
 	}
 }

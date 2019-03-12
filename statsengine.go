@@ -21,20 +21,23 @@ import (
 	"time"
 )
 
+var pslice1 = []payload{}	// live data slice, data is fed here
+var pslice2 = []payload{}	// old data slice, analysis is done here
+
 func statsengine(rp <-chan payload, rate int, numclients int) {
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
-	parray := []payload{}
 
 	for {
 		select {
 			case message = <- rp:
-				parray = append(parray,message)
+				pslice1 = append(pslice1,message)
 			case <- ticker.C:
-				for i,v := range parray {
+				for i,v := range pslice1 {
 					fmt.Println(i,v)
 				}
-				parray = []payload{}
+				pslice2 = pslice1	// copy data
+				pslice1 = []payload{}	// zap slice
 				fmt.Println()
 		}
 	}

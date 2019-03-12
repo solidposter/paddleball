@@ -69,6 +69,7 @@ func main() {
 	// start statsengine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr) )	// buffer return payload up to one second
 	go statsengine(rp, *ratePtr, *clntPtr)
+	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {

@@ -24,13 +24,18 @@ import (
 func statsengine(rp <-chan payload, rate int, numclients int) {
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
+	parray := []payload{}
 
 	for {
 		select {
 			case message = <- rp:
-				fmt.Println(message)
+				parray = append(parray,message)
 			case <- ticker.C:
-				fmt.Println("statsengine ticker")
+				for i,v := range parray {
+					fmt.Println(i,v)
+				}
+				parray = []payload{}
+				fmt.Println()
 		}
 	}
 }

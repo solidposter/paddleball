@@ -46,7 +46,7 @@ func receiver(conn net.Conn, key int) {
 		if message.GetKey() != int64(key) { 
 			fmt.Println("receiver bad key", message)
 		}
-//		fmt.Println("receiver:", message)
+		fmt.Println("receiver:", message)
 //		fmt.Println("receiver id:", message.GetId())
 //		t := time.Now()
 //		fmt.Println( t.Sub(message.GetCts()) )

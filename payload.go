@@ -26,7 +26,7 @@ import (
 
 type payload struct {
         Key     int64
-        Id      int64
+        Serial      int64
         Cts     time.Time	// client timestamp
         Sts     time.Time	// server timestamp
         Data    []byte		// random data
@@ -71,8 +71,8 @@ func (m *payload) GetKey() int64 {
 	return m.Key
 }
 
-func (m *payload) GetId() int64 {
-	return m.Id
+func (m *payload) Getserial() int64 {
+	return m.Serial
 }
 
 func (m *payload) GetSts() time.Time {
@@ -80,7 +80,7 @@ func (m *payload) GetSts() time.Time {
 }
 
 func (m *payload) Increment() {
-	m.Id++
+	m.Serial++
 }
 
 func (m *payload) SetClientTs() {

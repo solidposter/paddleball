@@ -40,7 +40,8 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 	for {
 		length, err := conn.Read(buf)
 		if err != nil {
-			log.Fatal("receiver:", err)
+			fmt.Println("receiver:", err)
+			continue
 		}
 		message = decode(buf,length)
 		if message.GetKey() != int64(key) { 
@@ -49,10 +50,6 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 		}
 		message.SetRecvTs()
 		rp <- message
-//		fmt.Println("receiver:", message)
-//		fmt.Println("receiver id:", message.GetId())
-//		t := time.Now()
-//		fmt.Println( t.Sub(message.GetCts()) )
 	}
 }
 
@@ -64,14 +61,13 @@ func sender(id int, conn net.Conn, key int, rate int) {
 	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
 		message.SetClientTs()
-	//	fmt.Println("sender:", message)
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {
 			log.Fatal("Write failed: ", err)
 		}
 		message.Increment()
-		<-ticker.C	// wait for the ticker to fire
+		<-ticker.C
 	}
 }
 

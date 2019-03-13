@@ -46,7 +46,8 @@ func server(port string, key int) {
 //		testis = addr
 //		fmt.Println("server addr:",testis)
 		if err != nil {
-			log.Fatal("server read error:",err)
+			fmt.Println("server read error:",err)
+			continue
 		}
 
 		message := decode(nbuf, length)

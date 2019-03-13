@@ -23,8 +23,11 @@ import (
 
 var pslice1 = []payload{}	// live data slice, data is fed here
 var pslice2 = []payload{}	// old data slice, analysis is done here
+var badname map[int64]payload
 
 func statsengine(rp <-chan payload, rate int, numclients int) {
+	badname = make(map[int64]payload)
+
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
 
@@ -33,13 +36,26 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 			case message = <- rp:
 				pslice1 = append(pslice1,message)
 			case <- ticker.C:
-				for i,v := range pslice2 {	// process old data
-					fmt.Println(i,v)
-				}
+				process()
 				pslice2 = pslice1	// copy data
 				pslice1 = []payload{}	// zap slice
 				fmt.Println("processing done")
 		}
+	}
+}
+
+
+func process() {
+	for _,v := range pslice2 {	// process old data
+		elem, ok := badname[v.Id]
+		if ok {
+			if v.Serial == elem.Serial+1 {
+				fmt.Println("correct packet order:", v.Id, elem.Serial, v.Serial)
+			} else { 
+				fmt.Println("wrong packet order:", v.Id, elem.Serial, v.Serial)
+			}
+		}
+		badname[v.Id] = v
 	}
 }
 

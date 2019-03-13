@@ -30,6 +30,7 @@ type payload struct {
         Serial      int64
         Cts     time.Time	// client timestamp
         Sts     time.Time	// server timestamp
+        Rts     time.Time	// receiver timestamp
         Data    []byte		// random data
 }
 
@@ -87,6 +88,10 @@ func (m *payload) Increment() {
 
 func (m *payload) SetClientTs() {
 	m.Cts = time.Now()
+}
+
+func (m *payload) SetRecvTs() {
+	m.Rts = time.Now()
 }
 
 func (m *payload) SetServerTs() {

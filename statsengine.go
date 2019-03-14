@@ -45,26 +45,31 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 }
 
 func process() {
+	var pkts,drops,reords int
+
 	for i,message := range pslice2 {
+		pkts++
 		nser, ok := serMap[message.Id]
 		if ok {
-			if message.Serial == nser {
-				fmt.Println("correct packet order:", message.Id, nser, message.Serial)
+			if message.Serial == nser {	// correct order
 				serMap[message.Id] = message.Serial+1
-			} else if message.Serial >  nser { 
+			} else if message.Serial >  nser {	// serial larger, drop or re-order
 				if findPacket(i, message.Id) {
+					reords++
 					fmt.Println("packet re-order:", message.Id, nser, message.Serial)
 				} else {
-					fmt.Println("packet loss:",message.Id, nser)
+					drops++
+					fmt.Println("packet loss:",message.Id, nser, message.Serial)
 				}
 				serMap[message.Id] = message.Serial+2
-			} else {
-				continue	// lower than expected serial, re-order that already was handled.
+			} else {	// lower than expected serial, re-order that already was handled.
+				continue
 			}
-		} else {
-			serMap[message.Id] = message.Serial+1	// first packet seen for this client ID
+		} else {	// first packet seen for this client ID
+			serMap[message.Id] = message.Serial+1
 		}
 	}
+	fmt.Println("pkts:",pkts,"drops:",drops,"re-ordered:",reords)
 }
 
 func findPacket(pos int, id int64) bool {

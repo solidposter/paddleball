@@ -47,31 +47,46 @@ func process() {
 	var pkts,drops,dups,reords int
 
 	for i,message := range pslice2 {
-		nser, ok := serMap[message.Id]
-		if ok {
-			if message.Serial == nser {	// correct order
+		_, ok := serMap[message.Id]
+		if !ok {	// initial packet from this sender ID
+			serMap[message.Id] = message.Serial+1
+			pkts++
+			continue
+		}
+		if message.Serial == serMap[message.Id] {	// correct order
+			pkts++
+			dups = dups + findPacket(i+1, message.Id)	// find duplicates
+			serMap[message.Id]++
+			continue
+		}
+		if message.Serial < serMap[message.Id] {		// lower than expected, re-order that already is handled
+			continue
+		}
+
+		// message.Serial is larger than expected serial.
+		// increment til we catch up
+		for ; message.Serial > serMap[message.Id]; {	// serial larger, drop or re-order
+			d := findPacket(i, message.Id)
+			if d == 0 {	// packet loss
+				drops++
 				pkts++
-				dups = dups + findPacket(i+1, message.Id)	// find duplicates
-				serMap[message.Id] = message.Serial+1
-			} else if message.Serial >  nser {	// serial larger, drop or re-order
-				d := findPacket(i, message.Id)
-				if d == 0 {
-					drops++
-					pkts++	// increment packet counter for lost packet
-					serMap[message.Id] = message.Serial+2	// lost packet
-					fmt.Println("packet loss:",message.Id, nser, message.Serial)
-				} else {
-					reords++
-					pkts++
-					dups = dups+d-1	// if we find one here it isn't a duplicate
-					serMap[message.Id] = message.Serial+1
-					fmt.Println("packet re-order:", message.Id, nser, message.Serial)
-				}
-			} else {	// lower than expected serial, re-order that already was handled.
+				serMap[message.Id]++
 				continue
 			}
-		} else {	// first packet seen for this client ID
-			serMap[message.Id] = message.Serial+1
+			if d == 1 {	// re-order
+				reords++
+				pkts++
+				serMap[message.Id]++
+				continue
+			}
+			if d > 1 { 	// re-order and duplicates
+				reords++
+				dups = dups+d
+				pkts++
+				serMap[message.Id]++
+				continue
+			}
+			serMap[message.Id]++
 		}
 	}
 

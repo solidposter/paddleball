@@ -59,6 +59,7 @@ func process() {
 					fmt.Println("packet re-order:", message.Id, nser, message.Serial)
 				} else {
 					drops++
+					pkts++	// increment packet counter for lost packet
 					fmt.Println("packet loss:",message.Id, nser, message.Serial)
 				}
 				serMap[message.Id] = message.Serial+2
@@ -69,7 +70,15 @@ func process() {
 			serMap[message.Id] = message.Serial+1
 		}
 	}
-	fmt.Println("pkts:",pkts,"drops:",drops,"re-ordered:",reords)
+
+	if pkts > 0 {
+		fmt.Print("packets: ", pkts)
+		fmt.Print(" drops: ", drops)
+		fmt.Printf("(%.2f%%) ", float64(drops)/float64(pkts)*100)
+		fmt.Print(" re-ordered: ", reords)
+		fmt.Printf("(%.2f%%) ", float64(reords)/float64(pkts)*100)
+		fmt.Println()
+	}
 }
 
 func findPacket(pos int, id int64) bool {

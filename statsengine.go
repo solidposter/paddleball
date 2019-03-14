@@ -39,7 +39,6 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 				process()
 				pslice2 = pslice1	// copy data
 				pslice1 = []payload{}	// zap slice
-				fmt.Println("processing done")
 		}
 	}
 }
@@ -75,6 +74,11 @@ func process() {
 			serMap[message.Id] = message.Serial+1
 		}
 	}
+
+	// check that the last packet in pslice1 isn't missing by searching
+	// for the next serial in pclice2
+	// add code... for each Id...
+
 
 	if pkts > 0 {
 		fmt.Print("packets: ", pkts)

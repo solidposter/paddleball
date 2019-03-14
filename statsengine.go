@@ -44,9 +44,8 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 	}
 }
 
-
 func process() {
-	for i,message := range pslice2 {	// process old data
+	for i,message := range pslice2 {
 		nser, ok := serMap[message.Id]
 		if ok {
 			if message.Serial == nser {
@@ -60,7 +59,7 @@ func process() {
 				}
 				serMap[message.Id] = message.Serial+2
 			} else {
-				continue	// lower than expected serial
+				continue	// lower than expected serial, re-order that already was handled.
 			}
 		} else {
 			serMap[message.Id] = message.Serial+1	// first packet seen for this client ID
@@ -76,8 +75,7 @@ func findPacket(pos int, id int64) bool {
 			}
 		}
 	}
-
-	for _,v := range pslice1 {	// search the next slice also
+	for _,v := range pslice1 {
 		if v.Id == id {
 			if v.Serial == serMap[v.Id] {
 				return true	// packet found, re-order

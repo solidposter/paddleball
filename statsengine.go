@@ -86,8 +86,8 @@ func process() {
 				serMap[message.Id]++
 				continue
 			}
-			serMap[message.Id]++
 		}
+		serMap[message.Id]++
 	}
 
 	// check that the last packet in pslice1 isn't missing by searching

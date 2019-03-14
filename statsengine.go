@@ -45,24 +45,29 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 }
 
 func process() {
-	var pkts,drops,reords int
+	var pkts,drops,dups,reords int
 
 	for i,message := range pslice2 {
-		pkts++
 		nser, ok := serMap[message.Id]
 		if ok {
 			if message.Serial == nser {	// correct order
+				pkts++
+				dups = dups + findPacket(i+1, message.Id)	// find duplicates
 				serMap[message.Id] = message.Serial+1
 			} else if message.Serial >  nser {	// serial larger, drop or re-order
-				if findPacket(i, message.Id) {
-					reords++
-					fmt.Println("packet re-order:", message.Id, nser, message.Serial)
-				} else {
+				d := findPacket(i, message.Id)
+				if d == 0 {
 					drops++
 					pkts++	// increment packet counter for lost packet
+					serMap[message.Id] = message.Serial+2	// lost packet
 					fmt.Println("packet loss:",message.Id, nser, message.Serial)
+				} else {
+					reords++
+					pkts++
+					dups = dups+d-1	// if we find one here it isn't a duplicate
+					serMap[message.Id] = message.Serial+1
+					fmt.Println("packet re-order:", message.Id, nser, message.Serial)
 				}
-				serMap[message.Id] = message.Serial+2
 			} else {	// lower than expected serial, re-order that already was handled.
 				continue
 			}
@@ -77,25 +82,27 @@ func process() {
 		fmt.Printf("(%.2f%%) ", float64(drops)/float64(pkts)*100)
 		fmt.Print(" re-ordered: ", reords)
 		fmt.Printf("(%.2f%%) ", float64(reords)/float64(pkts)*100)
-		fmt.Println()
+		fmt.Println(" duplicates:", dups)
 	}
 }
 
-func findPacket(pos int, id int64) bool {
+func findPacket(pos int, id int64) int {
+	var n int	// number of matching packets
+
 	for _,v := range pslice2[pos:] {
 		if v.Id == id {
 			if v.Serial == serMap[v.Id] {
-				return true	// packet found, re-order
+				n++
 			}
 		}
 	}
 	for _,v := range pslice1 {
 		if v.Id == id {
 			if v.Serial == serMap[v.Id] {
-				return true	// packet found, re-order
+				n++
 			}
 		}
 	}
-	return false	// packet not found, drop
+	return n
 }
 

@@ -79,7 +79,7 @@ func process() {
 				serMap[message.Id]++
 				continue
 			}
-			if d > 1 { 	// re-order and duplicates
+			if d > 1 {	// re-order and duplicates
 				reords++
 				dups = dups+d
 				pkts++
@@ -94,7 +94,7 @@ func process() {
 	// for the next serial in pclice2
 	// add code... for each Id...
 
-
+	// print some stats
 	if pkts > 0 {
 		fmt.Print("packets: ", pkts)
 		fmt.Print(" drops: ", drops)

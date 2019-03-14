@@ -76,6 +76,6 @@ func main() {
 		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr)
 		<- ticker.C
 	}
-	time.Sleep(30*time.Second)
+	<-(chan int)(nil)	// wait forever
 }
 

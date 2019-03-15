@@ -77,10 +77,10 @@ func main() {
 		<- ticker.C
 	}
 
-	for {
-		fmt.Println("statsenging channel capacity:", len(rp))
-		time.Sleep(time.Second)
-	}
-//	<-(chan int)(nil)	// wait forever
+//	for {
+//		fmt.Println("statsenging channel capacity:", len(rp))
+//		time.Sleep(time.Second)
+//	}
+	<-(chan int)(nil)	// wait forever
 }
 

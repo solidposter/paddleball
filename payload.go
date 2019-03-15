@@ -38,7 +38,7 @@ func newPayload(id int, key int) payload {
 	m :=payload{}
 	m.Id = int64(id)	// client id - identify client thread
 	m.Key = int64(key)
-	m.Data = make([]byte, 32)
+	m.Data = make([]byte, 1280)
 	rand.Read(m.Data)
 	return m
 }

@@ -67,7 +67,7 @@ func main() {
 	}
 
 	// start statsengine
-	rp := make(chan payload, (*ratePtr)*(*clntPtr) )	// buffer return payload up to one second
+	rp := make(chan payload, (*ratePtr)*(*clntPtr)*5 )	// buffer return payload up to five second
 	go statsengine(rp, *ratePtr, *clntPtr)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
@@ -76,6 +76,11 @@ func main() {
 		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr)
 		<- ticker.C
 	}
-	<-(chan int)(nil)	// wait forever
+
+	for {
+		fmt.Println("statsenging channel capacity:", len(rp))
+		time.Sleep(time.Second)
+	}
+//	<-(chan int)(nil)	// wait forever
 }
 

@@ -31,7 +31,7 @@ type engineStats struct {
 }
 
 func statsEngine(rp <-chan payload, rate int, numclients int) {
-	serMap := make(map[int64]int64)
+	serialMap := make(map[int64]int64)
 
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
@@ -41,14 +41,14 @@ func statsEngine(rp <-chan payload, rate int, numclients int) {
 			case message = <- rp:
 				pslice1 = append(pslice1,message)
 			case <- ticker.C:
-				process(serMap)
+				process(serialMap)
 				pslice2 = pslice1	// copy data
 				pslice1 = []payload{}	// zap slice
 		}
 	}
 }
 
-func process(serMap map[int64]int64) {
+func process(serialMap map[int64]int64) {
 	var pkts,drops,dups,reords int
 
 	var maxRtt, minRtt, totRtt time.Duration
@@ -57,47 +57,47 @@ func process(serMap map[int64]int64) {
 	for i,message := range pslice2 {
 		updateRtt(message, &maxRtt, &minRtt, &totRtt)
 
-		_, ok := serMap[message.Id]
+		_, ok := serialMap[message.Id]
 		if !ok {	// initial packet from this sender ID
-			serMap[message.Id] = message.Serial+1
+			serialMap[message.Id] = message.Serial+1
 			pkts++
 			continue
 		}
-		if message.Serial == serMap[message.Id] {	// correct order
+		if message.Serial == serialMap[message.Id] {	// correct order
 			pkts++
-			dups = dups + findPacket(serMap, +1, message.Id)	// find duplicates
-			serMap[message.Id]++
+			dups = dups + findPacket(serialMap, +1, message.Id)	// find duplicates
+			serialMap[message.Id]++
 			continue
 		}
-		if message.Serial < serMap[message.Id] {		// lower than expected, re-order that already is handled
+		if message.Serial < serialMap[message.Id] {		// lower than expected, re-order that already is handled
 			continue
 		}
 
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
-		for ; message.Serial > serMap[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(serMap, i, message.Id)
+		for ; message.Serial > serialMap[message.Id]; {	// serial larger, drop or re-order
+			d := findPacket(serialMap, i, message.Id)
 			if d == 0 {	// packet loss
 				drops++
 				pkts++
-				serMap[message.Id]++
+				serialMap[message.Id]++
 				continue
 			}
 			if d == 1 {	// re-order
 				reords++
 				pkts++
-				serMap[message.Id]++
+				serialMap[message.Id]++
 				continue
 			}
 			if d > 1 {	// re-order and duplicates
 				reords++
 				dups = dups+d
 				pkts++
-				serMap[message.Id]++
+				serialMap[message.Id]++
 				continue
 			}
 		}
-		serMap[message.Id]++
+		serialMap[message.Id]++
 	}
 
 	// check that the last packet in pslice1 isn't missing by searching
@@ -120,19 +120,19 @@ func process(serMap map[int64]int64) {
 	}
 }
 
-func findPacket(serMap map[int64]int64, pos int, id int64) int {
+func findPacket(serialMap map[int64]int64, pos int, id int64) int {
 	var n int	// number of matching packets
 
 	for _,v := range pslice2[pos:] {
 		if v.Id == id {
-			if v.Serial == serMap[v.Id] {
+			if v.Serial == serialMap[v.Id] {
 				n++
 			}
 		}
 	}
 	for _,v := range pslice1 {
 		if v.Id == id {
-			if v.Serial == serMap[v.Id] {
+			if v.Serial == serialMap[v.Id] {
 				n++
 			}
 		}

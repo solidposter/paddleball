@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-type engineStats struct {
+type engineInfo struct {
 	numClients, rate int
 	drops, dups, reords, totPkts int64
 	minRtt, maxRtt, totRtt time.Duration

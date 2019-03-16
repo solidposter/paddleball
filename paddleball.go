@@ -36,8 +36,8 @@ func main() {
 	flag.Parse()
 
 	// catch CTRL+C
-	globalStats := engineStats{}
-	go trapper(globalStats)
+	globalEngineInfo := engineInfo{}
+	go trapper(globalEngineInfo)
 
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {
@@ -90,7 +90,7 @@ func main() {
 	<-(chan int)(nil)	// wait forever
 }
 
-func trapper(globalStats engineStats) {
+func trapper(globalEngineInfo engineInfo) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<- cs

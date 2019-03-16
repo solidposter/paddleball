@@ -37,7 +37,8 @@ func main() {
 
 	// catch CTRL+C
 	globalEngineInfo := engineInfo{}
-	go trapper(globalEngineInfo)
+	globalEngineInfo.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+	go trapper(&globalEngineInfo)
 
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {
@@ -75,7 +76,7 @@ func main() {
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
 	globalEngineInfo.rate = *ratePtr
 	globalEngineInfo.numClients = *clntPtr
-	go statsEngine(rp, globalEngineInfo)
+	go statsEngine(rp, &globalEngineInfo)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
@@ -91,7 +92,7 @@ func main() {
 	<-(chan int)(nil)	// wait forever
 }
 
-func trapper(globalEngineInfo engineInfo) {
+func trapper(globalEngineInfo *engineInfo) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<- cs

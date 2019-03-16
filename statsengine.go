@@ -27,7 +27,7 @@ type engineInfo struct {
 	minRtt, maxRtt, totRtt time.Duration
 }
 
-func statsEngine(rp <-chan payload, globalEngineInfo engineInfo) {
+func statsEngine(rp <-chan payload, globalEngineInfo *engineInfo) {
 	serialMap := make(map[int64]int64)
 	workWindow := []payload{}	// analyze packets
 	feedWindow := []payload{}	// insert packets
@@ -40,35 +40,37 @@ func statsEngine(rp <-chan payload, globalEngineInfo engineInfo) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				process(serialMap, workWindow, feedWindow)
+				process(workWindow, feedWindow, serialMap, globalEngineInfo)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 		}
 	}
 }
 
-func process(serialMap map[int64]int64, workWindow []payload, feedWindow []payload) {
-	var pkts,drops,dups,reords int
-
-	var maxRtt, minRtt, totRtt time.Duration
-	minRtt = time.Duration(10*time.Second)
+func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, globalEngineInfo *engineInfo) {
+	lei := engineInfo {}			// local engine info
+	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+	lei.rate = globalEngineInfo.rate
+	lei.numClients = globalEngineInfo.numClients
+	fmt.Println("globaleingineinfo:",globalEngineInfo.totPkts)
 
 	for i,message := range workWindow {
-		updateRtt(message, &maxRtt, &minRtt, &totRtt)
+		updateRtt(message, &lei)
 
 		_, ok := serialMap[message.Id]
 		if !ok {	// initial packet from this sender ID
 			serialMap[message.Id] = message.Serial+1
-			pkts++
+			lei.totPkts++
 			continue
 		}
 		if message.Serial == serialMap[message.Id] {	// correct order
-			pkts++
-			dups = dups + findPacket(serialMap, workWindow, feedWindow, i+1, message.Id)	// find duplicates
+			lei.totPkts++
+			lei.dups = lei.dups + findPacket(serialMap, workWindow, feedWindow, i+1, message.Id)	// find duplicates
 			serialMap[message.Id]++
 			continue
 		}
 		if message.Serial < serialMap[message.Id] {		// lower than expected, re-order that already is handled
+			lei.totPkts++
 			continue
 		}
 
@@ -77,21 +79,21 @@ func process(serialMap map[int64]int64, workWindow []payload, feedWindow []paylo
 		for ; message.Serial > serialMap[message.Id]; {	// serial larger, drop or re-order
 			d := findPacket(serialMap, workWindow, feedWindow, i, message.Id)
 			if d == 0 {	// packet loss
-				drops++
-				pkts++
+				lei.drops++
+				lei.totPkts++
 				serialMap[message.Id]++
 				continue
 			}
 			if d == 1 {	// re-order
-				reords++
-				pkts++
+				lei.reords++
+				lei.totPkts++
 				serialMap[message.Id]++
 				continue
 			}
 			if d > 1 {	// re-order and duplicates
-				reords++
-				dups = dups+d
-				pkts++
+				lei.reords++
+				lei.dups = lei.dups+d
+				lei.totPkts++
 				serialMap[message.Id]++
 				continue
 			}
@@ -104,24 +106,25 @@ func process(serialMap map[int64]int64, workWindow []payload, feedWindow []paylo
 	// add code... for each Id...
 
 	// print some stats
-	if pkts > 0 {
-		fmt.Print("packets: ", pkts)
-		fmt.Print(" drops: ", drops)
-		fmt.Printf("(%.2f%%) ", float64(drops)/float64(pkts)*100)
-		fmt.Print("re-ordered: ", reords)
-		fmt.Printf("(%.2f%%) ", float64(reords)/float64(pkts)*100)
-		fmt.Print(" duplicates: ", dups)
+	if lei.totPkts > 0 {
+		fmt.Print("packets: ", lei.totPkts)
+		fmt.Print(" drops: ", lei.drops)
+		fmt.Printf("(%.2f%%) ", float64(lei.drops)/float64(lei.totPkts)*100)
+		fmt.Print("re-ordered: ", lei.reords)
+		fmt.Printf("(%.2f%%) ", float64(lei.reords)/float64(lei.totPkts)*100)
+		fmt.Print(" duplicates: ", lei.dups)
 
-		avgRtt := totRtt/time.Duration(pkts)
-		fastest := minRtt-avgRtt	// time below avg rtt
-		slowest := maxRtt-avgRtt	// time above avg rtt
+		avgRtt := lei.totRtt/time.Duration(lei.totPkts)
+		fastest := lei.minRtt-avgRtt	// time below avg rtt
+		slowest := lei.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 		fmt.Println()
 	}
+	globalEngineInfo.totPkts = globalEngineInfo.totPkts + lei.totPkts
 }
 
-func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, pos int, id int64) int {
-	var n int	// number of matching packets
+func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, pos int, id int64) int64 {
+	var n int64	// number of matching packets
 
 	for _,v := range workWindow[pos:] {
 		if v.Id == id {
@@ -140,15 +143,15 @@ func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []pa
 	return n
 }
 
-func updateRtt(message payload, maxRtt *time.Duration, minRtt *time.Duration, totRtt *time.Duration) {
+func updateRtt(message payload, lei *engineInfo) {
 		rtt := message.Rts.Sub(message.Cts)
 
-		*totRtt = *totRtt + rtt
-		if rtt < *minRtt {
-			*minRtt = rtt
+		lei.totRtt = lei.totRtt + rtt
+		if rtt < lei.minRtt {
+			lei.minRtt = rtt
 		}
-		if rtt > *maxRtt {
-			*maxRtt = rtt
+		if rtt > lei.maxRtt {
+			lei.maxRtt = rtt
 		}
 }
 

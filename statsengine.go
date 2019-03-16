@@ -65,7 +65,7 @@ func process(serialMap map[int64]int64) {
 		}
 		if message.Serial == serialMap[message.Id] {	// correct order
 			pkts++
-			dups = dups + findPacket(serialMap, +1, message.Id)	// find duplicates
+			dups = dups + findPacket(serialMap, i+1, message.Id)	// find duplicates
 			serialMap[message.Id]++
 			continue
 		}

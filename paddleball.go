@@ -67,7 +67,7 @@ func main() {
 	}
 
 	// start statsengine
-	rp := make(chan payload, (*ratePtr)*(*clntPtr)*two )	// buffer return payload up to two second
+	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
 	go statsengine(rp, *ratePtr, *clntPtr)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 

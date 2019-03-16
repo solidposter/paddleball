@@ -35,11 +35,6 @@ func main() {
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	flag.Parse()
 
-	// catch CTRL+C
-	gei := engineInfo{}	// global engine information
-	gei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
-	go trapper(&gei)
-
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {
 		if len(flag.Args()) == 0 {
@@ -51,6 +46,11 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// catch CTRL+C
+	gei := engineInfo{}	// global engine information
+	gei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+	go trapper(&gei)
 
 	// client mode
 	if len(flag.Args()) == 0 {
@@ -96,6 +96,19 @@ func trapper(gei *engineInfo) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<- cs
-	fmt.Println("add some useful info about the total runtime")
+	fmt.Println()
+	fmt.Print("packets: ", gei.totPkts)
+	fmt.Print(" drops: ", gei.drops)
+	fmt.Printf("(%.2f%%) ", float64(gei.drops)/float64(gei.totPkts)*100)
+	fmt.Print("re-ordered: ", gei.reords)
+	fmt.Printf("(%.2f%%) ", float64(gei.reords)/float64(gei.totPkts)*100)
+	fmt.Print(" duplicates: ", gei.dups)
+
+	avgRtt := gei.totRtt/time.Duration(gei.totPkts)
+	fastest := gei.minRtt-avgRtt    // time below avg rtt
+	slowest := gei.maxRtt-avgRtt    // time above avg rtt
+	fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
+	fmt.Println()
+
 	os.Exit(0)
 }

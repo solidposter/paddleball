@@ -120,6 +120,7 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 		fmt.Println()
 	}
 	// update the global stats
+	gei.drops = gei.drops + lei.drops
 	gei.dups = gei.dups + lei.dups
 	gei.reords = gei.reords + lei.reords
 	gei.totPkts = gei.totPkts + lei.totPkts

@@ -113,7 +113,11 @@ func process() {
 		fmt.Print("re-ordered: ", reords)
 		fmt.Printf("(%.2f%%) ", float64(reords)/float64(pkts)*100)
 		fmt.Print(" duplicates: ", dups)
-		fmt.Println(" avg rtt:", totRtt/time.Duration(pkts), "minRtt:", minRtt, "maxRtt:", maxRtt)
+
+		avgRtt := totRtt/time.Duration(pkts)
+		fastest := minRtt-avgRtt	// time below avg rtt
+		slowest := maxRtt-avgRtt	// time above avg rtt
+		fmt.Println(" avg rtt:", avgRtt, "fastest:", fastest, "slowest:", slowest)
 	}
 }
 

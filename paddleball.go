@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -32,6 +34,9 @@ func main() {
 	clntPtr := flag.Int("n", 1, "number of clients to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	flag.Parse()
+
+	// catch CTRL+C
+	go trapper()
 
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {
@@ -84,3 +89,10 @@ func main() {
 	<-(chan int)(nil)	// wait forever
 }
 
+func trapper() {
+	cs := make(chan os.Signal)
+	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
+	<- cs
+	fmt.Println("add some useful info about the total runtime")
+	os.Exit(0)
+}

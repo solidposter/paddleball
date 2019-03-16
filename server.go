@@ -55,11 +55,10 @@ func server(port string, key int) {
 			fmt.Println("server invalid key:",message)
 			continue
 		}
-//		fmt.Println("server:",message)
 
 		message.SetServerTs()
 		ebuf = message.encode()
 		pc.WriteTo(ebuf.Bytes(), addr)
-	}	
+	}
 }
 

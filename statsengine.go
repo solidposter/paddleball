@@ -27,7 +27,7 @@ type engineInfo struct {
 	minRtt, maxRtt, totRtt time.Duration
 }
 
-func statsEngine(rp <-chan payload, globalEngineInfo *engineInfo) {
+func statsEngine(rp <-chan payload, gei *engineInfo) {
 	serialMap := make(map[int64]int64)
 	workWindow := []payload{}	// analyze packets
 	feedWindow := []payload{}	// insert packets
@@ -40,19 +40,18 @@ func statsEngine(rp <-chan payload, globalEngineInfo *engineInfo) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				process(workWindow, feedWindow, serialMap, globalEngineInfo)
+				process(workWindow, feedWindow, serialMap, gei)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 		}
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, globalEngineInfo *engineInfo) {
+func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, gei *engineInfo) {
 	lei := engineInfo {}			// local engine info
 	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
-	lei.rate = globalEngineInfo.rate
-	lei.numClients = globalEngineInfo.numClients
-	fmt.Println("globaleingineinfo:",globalEngineInfo.totPkts)
+	lei.rate = gei.rate
+	lei.numClients = gei.numClients
 
 	for i,message := range workWindow {
 		updateRtt(message, &lei)
@@ -120,7 +119,18 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 		fmt.Println()
 	}
-	globalEngineInfo.totPkts = globalEngineInfo.totPkts + lei.totPkts
+	// update the global stats
+	gei.dups = gei.dups + lei.dups
+	gei.reords = gei.reords + lei.reords
+	gei.totPkts = gei.totPkts + lei.totPkts
+	gei.totRtt = gei.totRtt + lei.totRtt
+	if gei.minRtt > lei.minRtt {
+		gei.minRtt = lei.minRtt
+	}
+	if gei.maxRtt < lei.maxRtt {
+		gei.maxRtt = lei.maxRtt
+	}
+
 }
 
 func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, pos int, id int64) int64 {

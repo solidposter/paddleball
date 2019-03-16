@@ -21,9 +21,6 @@ import (
 	"time"
 )
 
-var pslice1 = []payload{}	// live data slice, data is fed here
-var pslice2 = []payload{}	// old data slice, analysis is done here
-
 type engineStats struct {
 	numClients, rate int
 	drops, dups, reords, totPkts int64
@@ -32,6 +29,8 @@ type engineStats struct {
 
 func statsEngine(rp <-chan payload, rate int, numclients int) {
 	serialMap := make(map[int64]int64)
+	workWindow := []payload{}	// analyze packets
+	feedWindow := []payload{}	// insert packets
 
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
@@ -39,22 +38,22 @@ func statsEngine(rp <-chan payload, rate int, numclients int) {
 	for {
 		select {
 			case message = <- rp:
-				pslice1 = append(pslice1,message)
+				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				process(serialMap)
-				pslice2 = pslice1	// copy data
-				pslice1 = []payload{}	// zap slice
+				process(serialMap, workWindow, feedWindow)
+				workWindow = feedWindow		// change feed to work
+				feedWindow = []payload{}	// re-init feed
 		}
 	}
 }
 
-func process(serialMap map[int64]int64) {
+func process(serialMap map[int64]int64, workWindow []payload, feedWindow []payload) {
 	var pkts,drops,dups,reords int
 
 	var maxRtt, minRtt, totRtt time.Duration
 	minRtt = time.Duration(10*time.Second)
 
-	for i,message := range pslice2 {
+	for i,message := range workWindow {
 		updateRtt(message, &maxRtt, &minRtt, &totRtt)
 
 		_, ok := serialMap[message.Id]
@@ -65,7 +64,7 @@ func process(serialMap map[int64]int64) {
 		}
 		if message.Serial == serialMap[message.Id] {	// correct order
 			pkts++
-			dups = dups + findPacket(serialMap, i+1, message.Id)	// find duplicates
+			dups = dups + findPacket(serialMap, workWindow, feedWindow, i+1, message.Id)	// find duplicates
 			serialMap[message.Id]++
 			continue
 		}
@@ -76,7 +75,7 @@ func process(serialMap map[int64]int64) {
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
 		for ; message.Serial > serialMap[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(serialMap, i, message.Id)
+			d := findPacket(serialMap, workWindow, feedWindow, i, message.Id)
 			if d == 0 {	// packet loss
 				drops++
 				pkts++
@@ -100,8 +99,8 @@ func process(serialMap map[int64]int64) {
 		serialMap[message.Id]++
 	}
 
-	// check that the last packet in pslice1 isn't missing by searching
-	// for the next serial in pclice2
+	// check that the last packet in workWindow isn't missing by searching
+	// for the next serial in feedWindow
 	// add code... for each Id...
 
 	// print some stats
@@ -120,17 +119,17 @@ func process(serialMap map[int64]int64) {
 	}
 }
 
-func findPacket(serialMap map[int64]int64, pos int, id int64) int {
+func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, pos int, id int64) int {
 	var n int	// number of matching packets
 
-	for _,v := range pslice2[pos:] {
+	for _,v := range workWindow[pos:] {
 		if v.Id == id {
 			if v.Serial == serialMap[v.Id] {
 				n++
 			}
 		}
 	}
-	for _,v := range pslice1 {
+	for _,v := range feedWindow {
 		if v.Id == id {
 			if v.Serial == serialMap[v.Id] {
 				n++

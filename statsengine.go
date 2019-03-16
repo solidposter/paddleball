@@ -27,7 +27,7 @@ type engineInfo struct {
 	minRtt, maxRtt, totRtt time.Duration
 }
 
-func statsEngine(rp <-chan payload, rate int, numclients int) {
+func statsEngine(rp <-chan payload, globalEngineInfo engineInfo) {
 	serialMap := make(map[int64]int64)
 	workWindow := []payload{}	// analyze packets
 	feedWindow := []payload{}	// insert packets
@@ -115,7 +115,8 @@ func process(serialMap map[int64]int64, workWindow []payload, feedWindow []paylo
 		avgRtt := totRtt/time.Duration(pkts)
 		fastest := minRtt-avgRtt	// time below avg rtt
 		slowest := maxRtt-avgRtt	// time above avg rtt
-		fmt.Println(" avg rtt:", avgRtt, "fastest:", fastest, "slowest:", slowest)
+		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
+		fmt.Println()
 	}
 }
 

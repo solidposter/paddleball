@@ -64,7 +64,6 @@ func main() {
 		fmt.Println("client rate below 1 pps not supported")
 		os.Exit(1)
 	}
-
 	if len(flag.Args()) == 1 {
 		fmt.Println("server address:", flag.Args()[0])
 	} else {
@@ -74,7 +73,9 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
-	go statsEngine(rp, *ratePtr, *clntPtr)
+	globalEngineInfo.rate = *ratePtr
+	globalEngineInfo.numClients = *clntPtr
+	go statsEngine(rp, globalEngineInfo)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)

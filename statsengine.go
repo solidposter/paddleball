@@ -46,7 +46,20 @@ func statsengine(rp <-chan payload, rate int, numclients int) {
 func process() {
 	var pkts,drops,dups,reords int
 
+	var rtt, minRtt, maxRtt, totRtt time.Duration
+	minRtt = time.Duration(10*time.Second)
+
 	for i,message := range pslice2 {
+		//test some RTT stuff
+		rtt = message.Rts.Sub(message.Cts)
+		totRtt = totRtt+rtt
+		if rtt < minRtt {
+			minRtt = rtt
+		}
+		if rtt > maxRtt {
+			maxRtt = rtt
+		}
+
 		_, ok := serMap[message.Id]
 		if !ok {	// initial packet from this sender ID
 			serMap[message.Id] = message.Serial+1
@@ -101,7 +114,8 @@ func process() {
 		fmt.Printf("(%.2f%%) ", float64(drops)/float64(pkts)*100)
 		fmt.Print(" re-ordered: ", reords)
 		fmt.Printf("(%.2f%%) ", float64(reords)/float64(pkts)*100)
-		fmt.Println(" duplicates:", dups)
+		fmt.Print(" duplicates: ", dups)
+		fmt.Println(" avg rtt:", totRtt/time.Duration(pkts), "minRtt:", minRtt, "maxRtt:", maxRtt)
 	}
 }
 
@@ -124,4 +138,5 @@ func findPacket(pos int, id int64) int {
 	}
 	return n
 }
+
 

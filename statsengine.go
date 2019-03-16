@@ -23,7 +23,6 @@ import (
 
 var pslice1 = []payload{}	// live data slice, data is fed here
 var pslice2 = []payload{}	// old data slice, analysis is done here
-var serMap map[int64]int64	// expected serial number, key = client ID
 
 type engineStats struct {
 	numClients, rate int
@@ -32,7 +31,7 @@ type engineStats struct {
 }
 
 func statsEngine(rp <-chan payload, rate int, numclients int) {
-	serMap = make(map[int64]int64)
+	serMap := make(map[int64]int64)
 
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
@@ -42,14 +41,14 @@ func statsEngine(rp <-chan payload, rate int, numclients int) {
 			case message = <- rp:
 				pslice1 = append(pslice1,message)
 			case <- ticker.C:
-				process()
+				process(serMap)
 				pslice2 = pslice1	// copy data
 				pslice1 = []payload{}	// zap slice
 		}
 	}
 }
 
-func process() {
+func process(serMap map[int64]int64) {
 	var pkts,drops,dups,reords int
 
 	var maxRtt, minRtt, totRtt time.Duration
@@ -66,7 +65,7 @@ func process() {
 		}
 		if message.Serial == serMap[message.Id] {	// correct order
 			pkts++
-			dups = dups + findPacket(i+1, message.Id)	// find duplicates
+			dups = dups + findPacket(serMap, +1, message.Id)	// find duplicates
 			serMap[message.Id]++
 			continue
 		}
@@ -77,7 +76,7 @@ func process() {
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
 		for ; message.Serial > serMap[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(i, message.Id)
+			d := findPacket(serMap, i, message.Id)
 			if d == 0 {	// packet loss
 				drops++
 				pkts++
@@ -121,7 +120,7 @@ func process() {
 	}
 }
 
-func findPacket(pos int, id int64) int {
+func findPacket(serMap map[int64]int64, pos int, id int64) int {
 	var n int	// number of matching packets
 
 	for _,v := range pslice2[pos:] {

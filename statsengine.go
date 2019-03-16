@@ -25,7 +25,13 @@ var pslice1 = []payload{}	// live data slice, data is fed here
 var pslice2 = []payload{}	// old data slice, analysis is done here
 var serMap map[int64]int64	// expected serial number, key = client ID
 
-func statsengine(rp <-chan payload, rate int, numclients int) {
+type engineStats struct {
+	numClients, rate int
+	drops, dups, reords, totPkts int64
+	minRtt, maxRtt, totRtt time.Duration
+}
+
+func statsEngine(rp <-chan payload, rate int, numclients int) {
 	serMap = make(map[int64]int64)
 
 	ticker := time.NewTicker(time.Second)

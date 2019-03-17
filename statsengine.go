@@ -43,7 +43,7 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 				lei := process(workWindow, feedWindow, serialMap, gei)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
-				statsPrint(lei)
+				statsPrint(&lei)
 				statsUpdate(gei,lei)
 				fmt.Print(" queue: ",len(rp),"/",cap(rp))
 				fmt.Println()
@@ -131,7 +131,7 @@ func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []pa
 	return n
 }
 
-func statsPrint(ei engineInfo) {
+func statsPrint(ei *engineInfo) {
 	if ei.totPkts == 0 {
 		return
 	}

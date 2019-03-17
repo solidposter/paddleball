@@ -91,20 +91,9 @@ func trapper(gei *engineInfo) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<- cs
-	if gei.totPkts != 0 {
-		fmt.Println()
-		fmt.Print("packets: ", gei.totPkts)
-		fmt.Print(" drops: ", gei.drops)
-		fmt.Printf("(%.2f%%) ", float64(gei.drops)/float64(gei.totPkts)*100)
-		fmt.Print("re-ordered: ", gei.reords)
-		fmt.Printf("(%.2f%%) ", float64(gei.reords)/float64(gei.totPkts)*100)
-		fmt.Print(" duplicates: ", gei.dups)
 
-		avgRtt := gei.totRtt/time.Duration(gei.totPkts)
-		fastest := gei.minRtt-avgRtt    // time below avg rtt
-		slowest := gei.maxRtt-avgRtt    // time above avg rtt
-		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
-		fmt.Println()
-	}
+	fmt.Println()
+	statsPrint(gei)
+	fmt.Println()
 	os.Exit(0)
 }

@@ -104,10 +104,6 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		serialNumbers[message.Id]++
 	}
 
-	// check that the last packet in workWindow isn't missing by searching
-	// for the next serial in feedWindow
-	// add code... for each Id...
-
 	return lei
 }
 

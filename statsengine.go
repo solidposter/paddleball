@@ -40,7 +40,7 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				lei := process(workWindow, feedWindow, serialMap, gei)
+				lei := process(workWindow, feedWindow, serialMap)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 				statsPrint(&lei)
@@ -51,11 +51,9 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, gei *engineInfo) engineInfo {
+func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64) engineInfo {
 	lei := engineInfo {}			// local engine info
 	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
-	lei.rate = gei.rate
-	lei.numClients = gei.numClients
 
 	for position, message := range workWindow {
 		updateRtt(message, &lei)

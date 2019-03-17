@@ -66,11 +66,6 @@ func (m payload) encode() *bytes.Buffer {
 	return &buffer
 }
 
-
-func (m *payload) GetKey() int64 {
-	return m.Key
-}
-
 func (m *payload) Increment() {
 	m.Serial++
 }

@@ -80,22 +80,22 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
 		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
-			if d == 0 {	// packet loss
+			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
+			if matches == 0 {	// packet loss
 				lei.drops++
 				lei.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
-			if d == 1 {	// re-order
+			if matches == 1 {	// re-order
 				lei.reords++
 				lei.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
-			if d > 1 {	// re-order and duplicates
+			if matches > 1 {	// re-order and duplicates
 				lei.reords++
-				lei.dups = lei.dups+d
+				lei.dups = lei.dups+matches
 				lei.totPkts++
 				serialNumbers[message.Id]++
 				continue

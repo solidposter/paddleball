@@ -40,16 +40,18 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				process(workWindow, feedWindow, serialMap, gei)
+				lei := process(workWindow, feedWindow, serialMap, gei)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
+				statsPrint(lei)
+				statsUpdate(gei,lei)
 				fmt.Print(" queue: ",len(rp),"/",cap(rp))
 				fmt.Println()
 		}
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, gei *engineInfo) {
+func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64, gei *engineInfo) engineInfo {
 	lei := engineInfo {}			// local engine info
 	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
 	lei.rate = gei.rate
@@ -106,33 +108,7 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 	// for the next serial in feedWindow
 	// add code... for each Id...
 
-	// print some stats
-	if lei.totPkts > 0 {
-		fmt.Print("packets: ", lei.totPkts)
-		fmt.Print(" drops: ", lei.drops)
-		fmt.Printf("(%.2f%%) ", float64(lei.drops)/float64(lei.totPkts)*100)
-		fmt.Print("re-ordered: ", lei.reords)
-		fmt.Printf("(%.2f%%) ", float64(lei.reords)/float64(lei.totPkts)*100)
-		fmt.Print(" duplicates: ", lei.dups)
-
-		avgRtt := lei.totRtt/time.Duration(lei.totPkts)
-		fastest := lei.minRtt-avgRtt	// time below avg rtt
-		slowest := lei.maxRtt-avgRtt	// time above avg rtt
-		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
-	}
-	// update the global stats
-	gei.drops = gei.drops + lei.drops
-	gei.dups = gei.dups + lei.dups
-	gei.reords = gei.reords + lei.reords
-	gei.totPkts = gei.totPkts + lei.totPkts
-	gei.totRtt = gei.totRtt + lei.totRtt
-	if gei.minRtt > lei.minRtt {
-		gei.minRtt = lei.minRtt
-	}
-	if gei.maxRtt < lei.maxRtt {
-		gei.maxRtt = lei.maxRtt
-	}
-
+	return lei
 }
 
 func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {
@@ -153,6 +129,37 @@ func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []pa
 		}
 	}
 	return n
+}
+
+func statsPrint(ei engineInfo) {
+	if ei.totPkts == 0 {
+		return
+	}
+	fmt.Print("packets: ", ei.totPkts)
+	fmt.Print(" drops: ", ei.drops)
+	fmt.Printf("(%.2f%%) ", float64(ei.drops)/float64(ei.totPkts)*100)
+	fmt.Print("re-ordered: ", ei.reords)
+	fmt.Printf("(%.2f%%) ", float64(ei.reords)/float64(ei.totPkts)*100)
+	fmt.Print(" duplicates: ", ei.dups)
+
+	avgRtt := ei.totRtt/time.Duration(ei.totPkts)
+	fastest := ei.minRtt-avgRtt	// time below avg rtt
+	slowest := ei.maxRtt-avgRtt	// time above avg rtt
+	fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
+}
+
+func statsUpdate(global *engineInfo, local engineInfo) {
+	global.drops = global.drops + local.drops
+	global.dups = global.dups + local.dups
+	global.reords = global.reords + local.reords
+	global.totPkts = global.totPkts + local.totPkts
+	global.totRtt = global.totRtt + local.totRtt
+	if global.minRtt > local.minRtt {
+		global.minRtt = local.minRtt
+	}
+	if global.maxRtt < local.maxRtt {
+		global.maxRtt = local.maxRtt
+	}
 }
 
 func updateRtt(message payload, lei *engineInfo) {

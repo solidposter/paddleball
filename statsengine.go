@@ -28,7 +28,7 @@ type engineInfo struct {
 }
 
 func statsEngine(rp <-chan payload, gei *engineInfo) {
-	serialMap := make(map[int64]int64)
+	serialNumbers := make(map[int64]int64)
 	workWindow := []payload{}	// analyze packets
 	feedWindow := []payload{}	// insert packets
 
@@ -40,7 +40,7 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				lei := process(workWindow, feedWindow, serialMap)
+				lei := process(workWindow, feedWindow, serialNumbers)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 				statsPrint(&lei)
@@ -51,55 +51,55 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int64) engineInfo {
+func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) engineInfo {
 	lei := engineInfo {}			// local engine info
 	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
 
 	for position, message := range workWindow {
 		updateRtt(message, &lei)
 
-		_, ok := serialMap[message.Id]
+		_, ok := serialNumbers[message.Id]
 		if !ok {	// initial packet from this sender ID
-			serialMap[message.Id] = message.Serial+1
+			serialNumbers[message.Id] = message.Serial+1
 			lei.totPkts++
 			continue
 		}
-		if message.Serial == serialMap[message.Id] {	// correct order
+		if message.Serial == serialNumbers[message.Id] {	// correct order
 			lei.totPkts++
-			lei.dups = lei.dups + findPacket(serialMap, workWindow, feedWindow, position+1, message.Id)	// find duplicates
-			serialMap[message.Id]++
+			lei.dups = lei.dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
+			serialNumbers[message.Id]++
 			continue
 		}
-		if message.Serial < serialMap[message.Id] {		// lower than expected, re-order that already is handled
+		if message.Serial < serialNumbers[message.Id] {		// lower than expected, re-order that already is handled
 			lei.totPkts++
 			continue
 		}
 
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
-		for ; message.Serial > serialMap[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(serialMap, workWindow, feedWindow, position, message.Id)
+		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
+			d := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if d == 0 {	// packet loss
 				lei.drops++
 				lei.totPkts++
-				serialMap[message.Id]++
+				serialNumbers[message.Id]++
 				continue
 			}
 			if d == 1 {	// re-order
 				lei.reords++
 				lei.totPkts++
-				serialMap[message.Id]++
+				serialNumbers[message.Id]++
 				continue
 			}
 			if d > 1 {	// re-order and duplicates
 				lei.reords++
 				lei.dups = lei.dups+d
 				lei.totPkts++
-				serialMap[message.Id]++
+				serialNumbers[message.Id]++
 				continue
 			}
 		}
-		serialMap[message.Id]++
+		serialNumbers[message.Id]++
 	}
 
 	// check that the last packet in workWindow isn't missing by searching
@@ -109,19 +109,19 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 	return lei
 }
 
-func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {
+func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {
 	var n int64	// number of matching packets
 
 	for _,v := range workWindow[position:] {
 		if v.Id == id {
-			if v.Serial == serialMap[v.Id] {
+			if v.Serial == serialNumbers[v.Id] {
 				n++
 			}
 		}
 	}
 	for _,v := range feedWindow {
 		if v.Id == id {
-			if v.Serial == serialMap[v.Id] {
+			if v.Serial == serialNumbers[v.Id] {
 				n++
 			}
 		}

@@ -67,20 +67,8 @@ func (m payload) encode() *bytes.Buffer {
 }
 
 
-func (m *payload) GetCts() time.Time {
-	return m.Cts
-}
-
 func (m *payload) GetKey() int64 {
 	return m.Key
-}
-
-func (m *payload) Getserial() int64 {
-	return m.Serial
-}
-
-func (m *payload) GetSts() time.Time {
-	return m.Sts
 }
 
 func (m *payload) Increment() {

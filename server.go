@@ -52,7 +52,8 @@ func server(port string, key int) {
 
 		message := decode(nbuf, length)
 		if message.GetKey() != serverkey {
-			fmt.Println("server invalid key:",message)
+			fmt.Print("server error: invalid message from ",addr, " ")
+			fmt.Println(message)
 			continue
 		}
 

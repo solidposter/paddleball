@@ -19,6 +19,7 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -49,7 +50,7 @@ func decode(buffer []byte, length int) payload {
 	dec := gob.NewDecoder(bytes.NewBuffer(buffer[:length]))
 	err := dec.Decode(&m)
 	if err != nil {
-		log.Fatal("decode error:", err)
+		fmt.Println("decode error:", err)
 	}
 	return m
 }

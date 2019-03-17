@@ -28,9 +28,9 @@ type engineInfo struct {
 }
 
 func statsEngine(rp <-chan payload, gei *engineInfo) {
-	serialNumbers := make(map[int64]int64)
-	workWindow := []payload{}	// analyze packets
-	feedWindow := []payload{}	// insert packets
+	serialNumbers := make(map[int64]int64)	// the expected serial number for each id
+	workWindow := []payload{}		// packets to analyze
+	feedWindow := []payload{}		// insert packets
 
 	ticker := time.NewTicker(time.Second)
 	message := payload{}
@@ -41,8 +41,10 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
 				lei := process(workWindow, feedWindow, serialNumbers)
+
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
+
 				statsPrint(&lei)
 				statsUpdate(gei,lei)
 				fmt.Print(" queue: ",len(rp),"/",cap(rp))

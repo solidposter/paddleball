@@ -55,7 +55,7 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 	lei.rate = gei.rate
 	lei.numClients = gei.numClients
 
-	for i,message := range workWindow {
+	for position, message := range workWindow {
 		updateRtt(message, &lei)
 
 		_, ok := serialMap[message.Id]
@@ -66,7 +66,7 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 		}
 		if message.Serial == serialMap[message.Id] {	// correct order
 			lei.totPkts++
-			lei.dups = lei.dups + findPacket(serialMap, workWindow, feedWindow, i+1, message.Id)	// find duplicates
+			lei.dups = lei.dups + findPacket(serialMap, workWindow, feedWindow, position+1, message.Id)	// find duplicates
 			serialMap[message.Id]++
 			continue
 		}
@@ -78,7 +78,7 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
 		for ; message.Serial > serialMap[message.Id]; {	// serial larger, drop or re-order
-			d := findPacket(serialMap, workWindow, feedWindow, i, message.Id)
+			d := findPacket(serialMap, workWindow, feedWindow, position, message.Id)
 			if d == 0 {	// packet loss
 				lei.drops++
 				lei.totPkts++
@@ -135,10 +135,10 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 
 }
 
-func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, pos int, id int64) int64 {
+func findPacket(serialMap map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {
 	var n int64	// number of matching packets
 
-	for _,v := range workWindow[pos:] {
+	for _,v := range workWindow[position:] {
 		if v.Id == id {
 			if v.Serial == serialMap[v.Id] {
 				n++

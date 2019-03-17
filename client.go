@@ -70,4 +70,3 @@ func sender(id int, conn net.Conn, key int, rate int) {
 		<-ticker.C
 	}
 }
-

@@ -81,4 +81,3 @@ func (m *payload) SetRecvTs() {
 func (m *payload) SetServerTs() {
 	m.Sts = time.Now()
 }
-

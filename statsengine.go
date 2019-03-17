@@ -43,6 +43,8 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 				process(workWindow, feedWindow, serialMap, gei)
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
+				fmt.Print(" queue: ",len(rp),"/",cap(rp))
+				fmt.Println()
 		}
 	}
 }
@@ -117,7 +119,6 @@ func process(workWindow []payload, feedWindow []payload, serialMap map[int64]int
 		fastest := lei.minRtt-avgRtt	// time below avg rtt
 		slowest := lei.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
-		fmt.Println()
 	}
 	// update the global stats
 	gei.drops = gei.drops + lei.drops
@@ -165,4 +166,3 @@ func updateRtt(message payload, lei *engineInfo) {
 			lei.maxRtt = rtt
 		}
 }
-

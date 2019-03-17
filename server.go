@@ -62,4 +62,3 @@ func server(port string, key int) {
 		pc.WriteTo(ebuf.Bytes(), addr)
 	}
 }
-

@@ -48,9 +48,11 @@ func main() {
 		}
 	}
 
-	// catch CTRL+C
-	gei := engineInfo{}	// global engine information
+	// Global information and statistics
+	gei := engineInfo{}
 	gei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+
+	// catch CTRL+C
 	go trapper(&gei)
 
 	// client mode

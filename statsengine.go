@@ -145,7 +145,7 @@ func statsPrint(ei *engineInfo) {
 	avgRtt = avgRtt / 1000000
 	fastest = fastest / 1000000
 	slowest = slowest / 1000000
-	fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, " slowest: +", slowest,"ms")
+	fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
 }
 
 func statsUpdate(global *engineInfo, local engineInfo) {

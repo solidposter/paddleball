@@ -23,12 +23,12 @@ import (
 	"time"
 )
 
-type engineInfo struct {
+type packetStats struct {
 	Drops, Dups, Reords, TotPkts int64
 	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
 }
 
-func statsEngine(rp <-chan payload, gei *engineInfo,  printJson bool) {
+func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
 	serialNumbers := make(map[int64]int64)	// the expected serial number for each id
 	workWindow := []payload{}		// packets to analyze
 	feedWindow := []payload{}		// insert packets
@@ -41,13 +41,13 @@ func statsEngine(rp <-chan payload, gei *engineInfo,  printJson bool) {
 			case message = <- rp:
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
-				lei := process(workWindow, feedWindow, serialNumbers)
+				local := process(workWindow, feedWindow, serialNumbers)
 
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 
-				statsPrint(&lei, printJson)
-				statsUpdate(gei,lei)
+				statsPrint(&local, printJson)
+				statsUpdate(global,local)
 				if !printJson {
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
 				}
@@ -56,27 +56,27 @@ func statsEngine(rp <-chan payload, gei *engineInfo,  printJson bool) {
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) engineInfo {
-	lei := engineInfo {}			// local engine info
-	lei.MinRtt = 1000000000*3600		// MinRtt must not be zero, set 1h in ns
+func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
+	local := packetStats {}			// local engine info
+	local.MinRtt = 1000000000*3600		// MinRtt must not be zero, set 1h in ns
 
 	for position, message := range workWindow {
-		updateRtt(message, &lei)
+		updateRtt(message, &local)
 
 		_, ok := serialNumbers[message.Id]
 		if !ok {	// initial packet from this sender ID
 			serialNumbers[message.Id] = message.Serial+1
-			lei.TotPkts++
+			local.TotPkts++
 			continue
 		}
 		if message.Serial == serialNumbers[message.Id] {	// correct order
-			lei.TotPkts++
-			lei.Dups = lei.Dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
+			local.TotPkts++
+			local.Dups = local.Dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
 			serialNumbers[message.Id]++
 			continue
 		}
 		if message.Serial < serialNumbers[message.Id] {		// lower than expected, re-order that already is handled
-			lei.TotPkts++
+			local.TotPkts++
 			continue
 		}
 
@@ -85,21 +85,21 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
-				lei.Drops++
-				lei.TotPkts++
+				local.Drops++
+				local.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches == 1 {	// re-order
-				lei.Reords++
-				lei.TotPkts++
+				local.Reords++
+				local.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches > 1 {	// re-order and duplicates
-				lei.Reords++
-				lei.Dups = lei.Dups+matches
-				lei.TotPkts++
+				local.Reords++
+				local.Dups = local.Dups+matches
+				local.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
@@ -107,7 +107,7 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		serialNumbers[message.Id]++
 	}
 
-	return lei
+	return local
 }
 
 func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {
@@ -130,7 +130,7 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(ei *engineInfo, printJson bool) {
+func statsPrint(ei *packetStats, printJson bool) {
 	if ei.TotPkts == 0 {
 		return
 	}
@@ -162,7 +162,7 @@ func statsPrint(ei *engineInfo, printJson bool) {
 	fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
 }
 
-func statsUpdate(global *engineInfo, local engineInfo) {
+func statsUpdate(global *packetStats, local packetStats) {
 	global.Drops = global.Drops + local.Drops
 	global.Dups = global.Dups + local.Dups
 	global.Reords = global.Reords + local.Reords
@@ -176,14 +176,14 @@ func statsUpdate(global *engineInfo, local engineInfo) {
 	}
 }
 
-func updateRtt(message payload, lei *engineInfo) {
+func updateRtt(message payload, local *packetStats) {
 		rtt := int64( message.Rts.Sub(message.Cts) )
 
-		lei.TotRtt = lei.TotRtt + rtt
-		if rtt < lei.MinRtt {
-			lei.MinRtt = rtt
+		local.TotRtt = local.TotRtt + rtt
+		if rtt < local.MinRtt {
+			local.MinRtt = rtt
 		}
-		if rtt > lei.MaxRtt {
-			lei.MaxRtt = rtt
+		if rtt > local.MaxRtt {
+			local.MaxRtt = rtt
 		}
 }

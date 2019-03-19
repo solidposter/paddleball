@@ -50,11 +50,11 @@ func main() {
 	}
 
 	// Global information and statistics
-	gei := engineInfo{}
-	gei.MinRtt = 1000000000*3600	// MinRtt must not be zero, set 1h in ns
+	global := packetStats{}
+	global.MinRtt = 1000000000*3600	// MinRtt must not be zero, set 1h in ns
 
 	// catch CTRL+C
-	go trapper(&gei)
+	go trapper(&global)
 
 	// client mode
 	if len(flag.Args()) == 0 {
@@ -78,7 +78,7 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
-	go statsEngine(rp, &gei, *jsonPtr)
+	go statsEngine(rp, &global, *jsonPtr)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
@@ -89,13 +89,13 @@ func main() {
 	<-(chan int)(nil)	// wait forever
 }
 
-func trapper(gei *engineInfo) {
+func trapper(global *packetStats) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<- cs
 
 	fmt.Println()
-	statsPrint(gei, false)	// no need for JSON here
+	statsPrint(global, false)	// no need for JSON here
 	fmt.Println()
 	os.Exit(0)
 }

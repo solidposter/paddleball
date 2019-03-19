@@ -34,6 +34,7 @@ func main() {
 	clntPtr := flag.Int("n", 1, "number of clients to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
+	jsonPtr := flag.Bool("j", false, "print output in JSON format")
 	flag.Parse()
 
 	// start in server mode, flag.Args()[0] is port to listen on.
@@ -50,7 +51,7 @@ func main() {
 
 	// Global information and statistics
 	gei := engineInfo{}
-	gei.minRtt = 1000000000*3600	// minRtt must not be zero, set 1h in ns
+	gei.MinRtt = 1000000000*3600	// MinRtt must not be zero, set 1h in ns
 
 	// catch CTRL+C
 	go trapper(&gei)
@@ -77,9 +78,7 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
-	gei.rate = *ratePtr
-	gei.numClients = *clntPtr
-	go statsEngine(rp, &gei)
+	go statsEngine(rp, &gei, *jsonPtr)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
@@ -96,7 +95,7 @@ func trapper(gei *engineInfo) {
 	<- cs
 
 	fmt.Println()
-	statsPrint(gei)
+	statsPrint(gei, false)	// no need for JSON here
 	fmt.Println()
 	os.Exit(0)
 }

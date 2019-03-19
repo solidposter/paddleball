@@ -17,17 +17,18 @@ package main
 //
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
 type engineInfo struct {
-	numClients, rate int
-	drops, dups, reords, totPkts int64
-	minRtt, maxRtt, totRtt int64	// nanoseconds
+	Drops, Dups, Reords, TotPkts int64
+	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
 }
 
-func statsEngine(rp <-chan payload, gei *engineInfo) {
+func statsEngine(rp <-chan payload, gei *engineInfo,  printJson bool) {
 	serialNumbers := make(map[int64]int64)	// the expected serial number for each id
 	workWindow := []payload{}		// packets to analyze
 	feedWindow := []payload{}		// insert packets
@@ -45,9 +46,11 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 
-				statsPrint(&lei)
+				statsPrint(&lei, printJson)
 				statsUpdate(gei,lei)
-				fmt.Print(" queue: ",len(rp),"/",cap(rp))
+				if !printJson {
+					fmt.Print(" queue: ",len(rp),"/",cap(rp))
+				}
 				fmt.Println()
 		}
 	}
@@ -55,7 +58,7 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) engineInfo {
 	lei := engineInfo {}			// local engine info
-	lei.minRtt = 1000000000*3600		// minRtt must not be zero, set 1h in ns
+	lei.MinRtt = 1000000000*3600		// MinRtt must not be zero, set 1h in ns
 
 	for position, message := range workWindow {
 		updateRtt(message, &lei)
@@ -63,17 +66,17 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		_, ok := serialNumbers[message.Id]
 		if !ok {	// initial packet from this sender ID
 			serialNumbers[message.Id] = message.Serial+1
-			lei.totPkts++
+			lei.TotPkts++
 			continue
 		}
 		if message.Serial == serialNumbers[message.Id] {	// correct order
-			lei.totPkts++
-			lei.dups = lei.dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
+			lei.TotPkts++
+			lei.Dups = lei.Dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
 			serialNumbers[message.Id]++
 			continue
 		}
 		if message.Serial < serialNumbers[message.Id] {		// lower than expected, re-order that already is handled
-			lei.totPkts++
+			lei.TotPkts++
 			continue
 		}
 
@@ -82,21 +85,21 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
-				lei.drops++
-				lei.totPkts++
+				lei.Drops++
+				lei.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches == 1 {	// re-order
-				lei.reords++
-				lei.totPkts++
+				lei.Reords++
+				lei.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches > 1 {	// re-order and duplicates
-				lei.reords++
-				lei.dups = lei.dups+matches
-				lei.totPkts++
+				lei.Reords++
+				lei.Dups = lei.Dups+matches
+				lei.TotPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
@@ -127,20 +130,31 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(ei *engineInfo) {
-	if ei.totPkts == 0 {
+func statsPrint(ei *engineInfo, printJson bool) {
+	if ei.TotPkts == 0 {
 		return
 	}
-	fmt.Print("packets: ", ei.totPkts)
-	fmt.Print(" drops: ", ei.drops)
-	fmt.Printf("(%.2f%%) ", float64(ei.drops)/float64(ei.totPkts)*100)
-	fmt.Print("re-ordered: ", ei.reords)
-	fmt.Printf("(%.2f%%) ", float64(ei.reords)/float64(ei.totPkts)*100)
-	fmt.Print("duplicates: ", ei.dups)
 
-	avgRtt := float64(ei.totRtt/ei.totPkts)
-	fastest := float64(ei.minRtt)-avgRtt	// time below avg rtt
-	slowest := float64(ei.maxRtt)-avgRtt	// time above avg rtt
+	if printJson {
+		b, err := json.Marshal(ei)
+		if err != nil {
+			fmt.Println("statsPrint error:",err)
+		} else {
+			os.Stdout.Write(b)
+		}
+		return
+	}
+
+	fmt.Print("packets: ", ei.TotPkts)
+	fmt.Print(" Drops: ", ei.Drops)
+	fmt.Printf("(%.2f%%) ", float64(ei.Drops)/float64(ei.TotPkts)*100)
+	fmt.Print("re-ordered: ", ei.Reords)
+	fmt.Printf("(%.2f%%) ", float64(ei.Reords)/float64(ei.TotPkts)*100)
+	fmt.Print("duplicates: ", ei.Dups)
+
+	avgRtt := float64(ei.TotRtt/ei.TotPkts)
+	fastest := float64(ei.MinRtt)-avgRtt	// time below avg rtt
+	slowest := float64(ei.MaxRtt)-avgRtt	// time above avg rtt
 	// convert from ns to ms
 	avgRtt = avgRtt / 1000000
 	fastest = fastest / 1000000
@@ -149,27 +163,27 @@ func statsPrint(ei *engineInfo) {
 }
 
 func statsUpdate(global *engineInfo, local engineInfo) {
-	global.drops = global.drops + local.drops
-	global.dups = global.dups + local.dups
-	global.reords = global.reords + local.reords
-	global.totPkts = global.totPkts + local.totPkts
-	global.totRtt = global.totRtt + local.totRtt
-	if global.minRtt > local.minRtt {
-		global.minRtt = local.minRtt
+	global.Drops = global.Drops + local.Drops
+	global.Dups = global.Dups + local.Dups
+	global.Reords = global.Reords + local.Reords
+	global.TotPkts = global.TotPkts + local.TotPkts
+	global.TotRtt = global.TotRtt + local.TotRtt
+	if global.MinRtt > local.MinRtt {
+		global.MinRtt = local.MinRtt
 	}
-	if global.maxRtt < local.maxRtt {
-		global.maxRtt = local.maxRtt
+	if global.MaxRtt < local.MaxRtt {
+		global.MaxRtt = local.MaxRtt
 	}
 }
 
 func updateRtt(message payload, lei *engineInfo) {
 		rtt := int64( message.Rts.Sub(message.Cts) )
 
-		lei.totRtt = lei.totRtt + rtt
-		if rtt < lei.minRtt {
-			lei.minRtt = rtt
+		lei.TotRtt = lei.TotRtt + rtt
+		if rtt < lei.MinRtt {
+			lei.MinRtt = rtt
 		}
-		if rtt > lei.maxRtt {
-			lei.maxRtt = rtt
+		if rtt > lei.MaxRtt {
+			lei.MaxRtt = rtt
 		}
 }

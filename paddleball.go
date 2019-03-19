@@ -50,7 +50,7 @@ func main() {
 
 	// Global information and statistics
 	gei := engineInfo{}
-	gei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+	gei.minRtt = 1000000000*3600	// minRtt must not be zero, set 1h in ns
 
 	// catch CTRL+C
 	go trapper(&gei)

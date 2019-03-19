@@ -24,7 +24,7 @@ import (
 type engineInfo struct {
 	numClients, rate int
 	drops, dups, reords, totPkts int64
-	minRtt, maxRtt, totRtt time.Duration
+	minRtt, maxRtt, totRtt int64	// nanoseconds
 }
 
 func statsEngine(rp <-chan payload, gei *engineInfo) {
@@ -55,7 +55,7 @@ func statsEngine(rp <-chan payload, gei *engineInfo) {
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) engineInfo {
 	lei := engineInfo {}			// local engine info
-	lei.minRtt = time.Duration(1*time.Hour)	// minRtt must not be zero
+	lei.minRtt = 1000000000*3600		// minRtt must not be zero, set 1h in ns
 
 	for position, message := range workWindow {
 		updateRtt(message, &lei)
@@ -136,12 +136,16 @@ func statsPrint(ei *engineInfo) {
 	fmt.Printf("(%.2f%%) ", float64(ei.drops)/float64(ei.totPkts)*100)
 	fmt.Print("re-ordered: ", ei.reords)
 	fmt.Printf("(%.2f%%) ", float64(ei.reords)/float64(ei.totPkts)*100)
-	fmt.Print(" duplicates: ", ei.dups)
+	fmt.Print("duplicates: ", ei.dups)
 
-	avgRtt := ei.totRtt/time.Duration(ei.totPkts)
-	fastest := ei.minRtt-avgRtt	// time below avg rtt
-	slowest := ei.maxRtt-avgRtt	// time above avg rtt
-	fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
+	avgRtt := float64(ei.totRtt/ei.totPkts)
+	fastest := float64(ei.minRtt)-avgRtt	// time below avg rtt
+	slowest := float64(ei.maxRtt)-avgRtt	// time above avg rtt
+	// convert from ns to ms
+	avgRtt = avgRtt / 1000000
+	fastest = fastest / 1000000
+	slowest = slowest / 1000000
+	fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, " slowest: +", slowest,"ms")
 }
 
 func statsUpdate(global *engineInfo, local engineInfo) {
@@ -159,7 +163,7 @@ func statsUpdate(global *engineInfo, local engineInfo) {
 }
 
 func updateRtt(message payload, lei *engineInfo) {
-		rtt := message.Rts.Sub(message.Cts)
+		rtt := int64( message.Rts.Sub(message.Cts) )
 
 		lei.totRtt = lei.totRtt + rtt
 		if rtt < lei.minRtt {

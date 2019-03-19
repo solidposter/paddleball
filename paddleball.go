@@ -70,7 +70,9 @@ func main() {
 		os.Exit(1)
 	}
 	if len(flag.Args()) == 1 {
-		fmt.Println("server address:", flag.Args()[0])
+		if !*jsonPtr {
+			fmt.Println("server address:", flag.Args()[0])
+		}
 	} else {
 		fmt.Println("Error, only server IP:port follow the options.", flag.Args())
 		os.Exit(1)

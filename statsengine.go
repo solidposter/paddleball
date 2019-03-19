@@ -50,8 +50,8 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
 				statsUpdate(global,local)
 				if !printJson {
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
+					fmt.Println()
 				}
-				fmt.Println()
 		}
 	}
 }
@@ -141,6 +141,7 @@ func statsPrint(ei *packetStats, printJson bool) {
 			fmt.Println("statsPrint error:",err)
 		} else {
 			os.Stdout.Write(b)
+			fmt.Println()
 		}
 		return
 	}

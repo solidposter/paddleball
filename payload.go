@@ -35,11 +35,11 @@ type payload struct {
         Data    []byte		// random data
 }
 
-func newPayload(id int, key int) payload {
+func newPayload(id int, key int, size int) payload {
 	m :=payload{}
 	m.Id = int64(id)	// client id - identify client thread
 	m.Key = int64(key)
-	m.Data = make([]byte, 1280)
+	m.Data = make([]byte, size)
 	rand.Read(m.Data)
 	return m
 }

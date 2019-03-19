@@ -33,6 +33,7 @@ func main() {
 	keyPtr := flag.Int("k", 0, "server key")
 	clntPtr := flag.Int("n", 1, "number of clients to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
+	bytePtr := flag.Int("b", 384, "payload size")
 	flag.Parse()
 
 	// start in server mode, flag.Args()[0] is port to listen on.
@@ -81,7 +82,7 @@ func main() {
 
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
-		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr)
+		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr, *bytePtr)
 		<- ticker.C
 	}
 	<-(chan int)(nil)	// wait forever

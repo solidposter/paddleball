@@ -24,13 +24,13 @@ import (
 	"time"
 )
 
-func client(rp chan<- payload, id int, addr string, key int, rate int) {
+func client(rp chan<- payload, id int, addr string, key int, rate int, size int) {
 	conn, err := net.Dial("udp",addr)
 	if err != nil {
 		log.Fatal("Failed to open UDP socket:", err)
 	}
 	go receiver(rp, conn, key)
-	sender(id, conn, key, rate)
+	sender(id, conn, key, rate, size)
 }
 
 func receiver(rp chan<- payload, conn net.Conn, key int) {
@@ -53,10 +53,10 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 	}
 }
 
-func sender(id int, conn net.Conn, key int, rate int) {
+func sender(id int, conn net.Conn, key int, rate int, size int) {
 	var buf *bytes.Buffer
 
-	message := newPayload(id, key)
+	message := newPayload(id, key, size)
 
 	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
 	for {

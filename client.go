@@ -62,7 +62,7 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 
 	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
-		message.SetClientTs()
+		message.Cts = time.Now()
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {

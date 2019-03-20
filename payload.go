@@ -70,10 +70,6 @@ func (m *payload) Increment() {
 	m.Serial++
 }
 
-func (m *payload) SetClientTs() {
-	m.Cts = time.Now()
-}
-
 func (m *payload) SetServerTs() {
 	m.Sts = time.Now()
 }

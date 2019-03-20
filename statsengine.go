@@ -50,6 +50,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
 				if printJson {
 					statsPrint(&local, printJson)
 				} else {
+					statsPrint(&local, printJson)
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
 					fmt.Println()
 				}

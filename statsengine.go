@@ -32,7 +32,7 @@ type jsonReport struct {
 	Application	string
 	Tag		string
 	Drops, Dups, Reords, TotPkts int64
-	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
+	AvgRtt,Fastest,Slowest	float64
 }
 
 func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
@@ -166,9 +166,11 @@ func statsPrint(ei *packetStats, printJson string) {
 		output.Dups = ei.Dups
 		output.Reords = ei.Reords
 		output.TotPkts = ei.TotPkts
-		output.MinRtt = ei.MinRtt
-		output.MaxRtt = ei.MaxRtt
-		output.TotRtt = ei.TotRtt
+
+		output.AvgRtt =  float64(ei.TotRtt/ei.TotPkts)		// avg rtt in nanoseconds
+		output.Fastest = float64(ei.MinRtt)-output.AvgRtt	// time below avg rtt in nanoseconds
+		output.Slowest = float64(ei.MinRtt)-output.AvgRtt	// time above avg rtt in nanoseconds
+
 		b, err := json.Marshal(output)
 		if err != nil {
 			fmt.Println("statsPrint error:",err)

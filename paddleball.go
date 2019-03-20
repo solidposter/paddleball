@@ -34,7 +34,7 @@ func main() {
 	clntPtr := flag.Int("n", 1, "number of clients to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
-	jsonPtr := flag.String("j", "text", "print in JSON format with specified tag")
+	jsonPtr := flag.String("j", "text", "print in JSON format with (not the word text)")
 	flag.Parse()
 
 	// start in server mode, flag.Args()[0] is port to listen on.

@@ -43,12 +43,14 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 			fmt.Println("receiver:", err)
 			continue
 		}
+		rts := time.Now()
 		message = decode(buf,length)
 		if message.Key != int64(key) {
 			fmt.Println("receiver bad key", message)
 			continue
 		}
-		message.SetRecvTs()
+		message.Rts = rts
+//		message.SetRecvTs()
 		rp <- message
 	}
 }

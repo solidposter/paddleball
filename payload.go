@@ -74,10 +74,6 @@ func (m *payload) SetClientTs() {
 	m.Cts = time.Now()
 }
 
-func (m *payload) SetRecvTs() {
-	m.Rts = time.Now()
-}
-
 func (m *payload) SetServerTs() {
 	m.Sts = time.Now()
 }

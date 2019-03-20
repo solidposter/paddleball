@@ -34,7 +34,7 @@ func main() {
 	clntPtr := flag.Int("n", 1, "number of clients to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
-	jsonPtr := flag.Bool("j", false, "print output in JSON format")
+	jsonPtr := flag.String("j", "text", "print in JSON format with specified tag")
 	flag.Parse()
 
 	// start in server mode, flag.Args()[0] is port to listen on.
@@ -70,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 	if len(flag.Args()) == 1 {
-		if !*jsonPtr {
+		if *jsonPtr == "text" {
 			fmt.Println("server address:", flag.Args()[0])
 		}
 	} else {
@@ -97,7 +97,7 @@ func trapper(global *packetStats) {
 	<- cs
 
 	fmt.Println()
-	statsPrint(global, false)	// no need for JSON here
+	statsPrint(global, "text")	// no need for JSON here
 	fmt.Println()
 	os.Exit(0)
 }

@@ -28,7 +28,14 @@ type packetStats struct {
 	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
 }
 
-func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
+type jsonReport struct {
+	Application	string
+	Tag		string
+	Drops, Dups, Reords, TotPkts int64
+	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
+}
+
+func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 	serialNumbers := make(map[int64]int64)	// the expected serial number for each id
 	workWindow := []payload{}		// packets to analyze
 	feedWindow := []payload{}		// insert packets
@@ -47,10 +54,8 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 
-				if printJson {
-					statsPrint(&local, printJson)
-				} else {
-					statsPrint(&local, printJson)
+				statsPrint(&local, printJson)
+				if printJson == "text" {
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
 					fmt.Println()
 				}
@@ -132,37 +137,46 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(ei *packetStats, printJson bool) {
+func statsPrint(ei *packetStats, printJson string) {
 	if ei.TotPkts == 0 {
 		return
 	}
 
-	if printJson {
-		b, err := json.Marshal(ei)
+	if printJson == "text" {
+		fmt.Print("packets: ", ei.TotPkts)
+		fmt.Print(" Drops: ", ei.Drops)
+		fmt.Printf("(%.2f%%) ", float64(ei.Drops)/float64(ei.TotPkts)*100)
+		fmt.Print("re-ordered: ", ei.Reords)
+		fmt.Printf("(%.2f%%) ", float64(ei.Reords)/float64(ei.TotPkts)*100)
+		fmt.Print("duplicates: ", ei.Dups)
+
+		avgRtt := float64(ei.TotRtt/ei.TotPkts)
+		fastest := float64(ei.MinRtt)-avgRtt	// time below avg rtt
+		slowest := float64(ei.MaxRtt)-avgRtt	// time above avg rtt
+		// convert from ns to ms
+		avgRtt = avgRtt / 1000000
+		fastest = fastest / 1000000
+		slowest = slowest / 1000000
+		fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
+	} else {
+		output := jsonReport{}
+		output.Application = "PADDLEBALL"
+		output.Tag = printJson
+		output.Drops = ei.Drops
+		output.Dups = ei.Dups
+		output.Reords = ei.Reords
+		output.TotPkts = ei.TotPkts
+		output.MinRtt = ei.MinRtt
+		output.MaxRtt = ei.MaxRtt
+		output.TotRtt = ei.TotRtt
+		b, err := json.Marshal(output)
 		if err != nil {
 			fmt.Println("statsPrint error:",err)
 		} else {
 			os.Stdout.Write(b)
 			fmt.Println()
 		}
-		return
 	}
-
-	fmt.Print("packets: ", ei.TotPkts)
-	fmt.Print(" Drops: ", ei.Drops)
-	fmt.Printf("(%.2f%%) ", float64(ei.Drops)/float64(ei.TotPkts)*100)
-	fmt.Print("re-ordered: ", ei.Reords)
-	fmt.Printf("(%.2f%%) ", float64(ei.Reords)/float64(ei.TotPkts)*100)
-	fmt.Print("duplicates: ", ei.Dups)
-
-	avgRtt := float64(ei.TotRtt/ei.TotPkts)
-	fastest := float64(ei.MinRtt)-avgRtt	// time below avg rtt
-	slowest := float64(ei.MaxRtt)-avgRtt	// time above avg rtt
-	// convert from ns to ms
-	avgRtt = avgRtt / 1000000
-	fastest = fastest / 1000000
-	slowest = slowest / 1000000
-	fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
 }
 
 func statsUpdate(global *packetStats, local packetStats) {

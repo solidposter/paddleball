@@ -50,7 +50,6 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 			continue
 		}
 		message.Rts = rts
-//		message.SetRecvTs()
 		rp <- message
 	}
 }

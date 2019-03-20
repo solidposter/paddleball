@@ -42,13 +42,14 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson bool) {
 				feedWindow = append(feedWindow ,message)
 			case <- ticker.C:
 				local := process(workWindow, feedWindow, serialNumbers)
+				statsUpdate(global,local)
 
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 
-				statsPrint(&local, printJson)
-				statsUpdate(global,local)
-				if !printJson {
+				if printJson {
+					statsPrint(&local, printJson)
+				} else {
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
 					fmt.Println()
 				}

@@ -169,7 +169,7 @@ func statsPrint(ei *packetStats, printJson string) {
 
 		output.AvgRtt =  float64(ei.TotRtt/ei.TotPkts)		// avg rtt in nanoseconds
 		output.Fastest = float64(ei.MinRtt)-output.AvgRtt	// time below avg rtt in nanoseconds
-		output.Slowest = float64(ei.MinRtt)-output.AvgRtt	// time above avg rtt in nanoseconds
+		output.Slowest = float64(ei.MaxRtt)-output.AvgRtt	// time above avg rtt in nanoseconds
 
 		b, err := json.Marshal(output)
 		if err != nil {

@@ -29,10 +29,15 @@ type packetStats struct {
 }
 
 type jsonReport struct {
-	Application	string
+	Source		string
 	Tag		string
-	Drops, Dups, Reords, TotPkts int64
-	AvgRtt,Fastest,Slowest	float64
+	ReceivedPackets		int64
+	DroppedPackets		int64
+	DuplicatePackets	int64
+	ReorderedPackets	int64
+	AverageRTT		float64
+	LowestRTT		float64
+	HighestRTT		float64
 }
 
 func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
@@ -160,16 +165,16 @@ func statsPrint(ei *packetStats, printJson string) {
 		fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
 	} else {
 		output := jsonReport{}
-		output.Application = "PADDLEBALL"
+		output.Source = "PADDLEBALL"
 		output.Tag = printJson
-		output.Drops = ei.Drops
-		output.Dups = ei.Dups
-		output.Reords = ei.Reords
-		output.TotPkts = ei.TotPkts
+		output.DroppedPackets = ei.Drops
+		output.DuplicatePackets = ei.Dups
+		output.ReorderedPackets = ei.Reords
+		output.ReceivedPackets = ei.TotPkts
 
-		output.AvgRtt =  float64(ei.TotRtt/ei.TotPkts)		// avg rtt in nanoseconds
-		output.Fastest = float64(ei.MinRtt)-output.AvgRtt	// time below avg rtt in nanoseconds
-		output.Slowest = float64(ei.MaxRtt)-output.AvgRtt	// time above avg rtt in nanoseconds
+		output.AverageRTT =  float64(ei.TotRtt/ei.TotPkts) / 1000000	// avg rtt in ms
+		output.LowestRTT = float64(ei.MinRtt) / 1000000			// lowest rtt in ms
+		output.HighestRTT = float64(ei.MaxRtt) / 1000000		// highest rtt in ms
 
 		b, err := json.Marshal(output)
 		if err != nil {

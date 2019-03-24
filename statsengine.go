@@ -71,7 +71,6 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
 	local := packetStats {}			// local engine info
-	local.minRtt =	time.Hour		// minRtt must not be zero, set high
 
 	for position, message := range workWindow {
 		updateRtt(message, &local)
@@ -190,10 +189,10 @@ func statsUpdate(global *packetStats, local packetStats) {
 	global.reords = global.reords + local.reords
 	global.totPkts = global.totPkts + local.totPkts
 	global.totRtt = global.totRtt + local.totRtt
-	if global.minRtt > local.minRtt {
+	if local.minRtt < global.minRtt || global.minRtt == 0 {
 		global.minRtt = local.minRtt
 	}
-	if global.maxRtt < local.maxRtt {
+	if local.maxRtt > global.maxRtt {
 		global.maxRtt = local.maxRtt
 	}
 }
@@ -202,7 +201,7 @@ func updateRtt(message payload, local *packetStats) {
 		rtt := message.Rts.Sub(message.Cts)
 
 		local.totRtt = local.totRtt + rtt
-		if rtt < local.minRtt {
+		if rtt < local.minRtt || local.minRtt == 0 {
 			local.minRtt = rtt
 		}
 		if rtt > local.maxRtt {

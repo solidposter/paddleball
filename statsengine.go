@@ -147,8 +147,8 @@ func statsPrint(stats *packetStats, printJson string) {
 	}
 
 	if printJson == "text" {
-		fmt.Print("packets: ", stats.rcvdPkts)
-		fmt.Print(" dropPkts: ", stats.dropPkts)
+		fmt.Print("received: ", stats.rcvdPkts)
+		fmt.Print(" dropped: ", stats.dropPkts)
 		fmt.Printf("(%.2f%%) ", float64(stats.dropPkts)/float64(stats.rcvdPkts)*100)
 		fmt.Print("re-ordered: ", stats.reordPkts)
 		fmt.Printf("(%.2f%%) ", float64(stats.reordPkts)/float64(stats.rcvdPkts)*100)

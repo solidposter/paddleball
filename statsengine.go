@@ -161,7 +161,7 @@ func statsPrint(ei *packetStats, printJson string) {
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
-		output.Sourcetype = "PADDLEBALL"
+		output.Sourcetype = "PADDLEBALLBETA"
 		output.Tag = printJson
 		output.DroppedPackets = ei.drops
 		output.DuplicatePackets = ei.dups

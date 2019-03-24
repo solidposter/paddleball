@@ -51,7 +51,7 @@ func main() {
 
 	// Global information and statistics
 	global := packetStats{}
-	global.MinRtt = 1000000000*3600	// MinRtt must not be zero, set 1h in ns
+	global.MinRtt = time.Hour	// minRtt must not be zero, set high
 
 	// catch CTRL+C
 	go trapper(&global)

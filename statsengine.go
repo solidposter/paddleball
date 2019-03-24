@@ -25,7 +25,7 @@ import (
 
 type packetStats struct {
 	Drops, Dups, Reords, TotPkts int64
-	MinRtt, MaxRtt, TotRtt int64	// nanoseconds
+	MinRtt, MaxRtt, TotRtt time.Duration
 }
 
 type jsonReport struct {
@@ -70,7 +70,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
 	local := packetStats {}			// local engine info
-	local.MinRtt = 1000000000*3600		// MinRtt must not be zero, set 1h in ns
+	local.MinRtt =	time.Hour		// minRtt must not be zero, set high
 
 	for position, message := range workWindow {
 		updateRtt(message, &local)
@@ -155,14 +155,10 @@ func statsPrint(ei *packetStats, printJson string) {
 		fmt.Printf("(%.2f%%) ", float64(ei.Reords)/float64(ei.TotPkts)*100)
 		fmt.Print("duplicates: ", ei.Dups)
 
-		avgRtt := float64(ei.TotRtt/ei.TotPkts)
-		fastest := float64(ei.MinRtt)-avgRtt	// time below avg rtt
-		slowest := float64(ei.MaxRtt)-avgRtt	// time above avg rtt
-		// convert from ns to ms
-		avgRtt = avgRtt / 1000000
-		fastest = fastest / 1000000
-		slowest = slowest / 1000000
-		fmt.Print(" avg rtt: ", avgRtt, "ms fastest: ", fastest, "ms slowest: +", slowest,"ms")
+		avgRtt := ei.TotRtt/time.Duration(ei.TotPkts)
+		fastest := ei.MinRtt-avgRtt	// time below avg rtt
+		slowest := ei.MaxRtt-avgRtt	// time above avg rtt
+		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
@@ -172,7 +168,7 @@ func statsPrint(ei *packetStats, printJson string) {
 		output.ReorderedPackets = ei.Reords
 		output.ReceivedPackets = ei.TotPkts
 
-		output.AverageRTT =  float64(ei.TotRtt/ei.TotPkts) / 1000000	// avg rtt in ms
+		output.AverageRTT =  float64(ei.TotRtt/time.Duration(ei.TotPkts)) / 1000000	// avg rtt in ms
 		output.LowestRTT = float64(ei.MinRtt) / 1000000			// lowest rtt in ms
 		output.HighestRTT = float64(ei.MaxRtt) / 1000000		// highest rtt in ms
 
@@ -201,7 +197,7 @@ func statsUpdate(global *packetStats, local packetStats) {
 }
 
 func updateRtt(message payload, local *packetStats) {
-		rtt := int64( message.Rts.Sub(message.Cts) )
+		rtt := message.Rts.Sub(message.Cts)
 
 		local.TotRtt = local.TotRtt + rtt
 		if rtt < local.MinRtt {

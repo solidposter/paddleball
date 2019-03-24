@@ -27,7 +27,7 @@ import (
 func client(rp chan<- payload, id int, addr string, key int, rate int, size int) {
 	conn, err := net.Dial("udp",addr)
 	if err != nil {
-		log.Fatal("Failed to open UDP socket:", err)
+		log.Fatal("client:", err)
 	}
 	go receiver(rp, conn, key)
 	sender(id, conn, key, rate, size)
@@ -65,7 +65,7 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {
-			log.Fatal("Write failed: ", err)
+			log.Fatal("sender:", err)
 		}
 		message.Increment()
 		<-ticker.C

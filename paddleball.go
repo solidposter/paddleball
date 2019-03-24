@@ -81,7 +81,7 @@ func main() {
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
 	go statsEngine(rp, &global, *jsonPtr)
 	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
-
+	// start the clients, staged over a second
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
 		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr, *bytePtr)

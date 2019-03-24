@@ -26,18 +26,18 @@ import (
 )
 
 type payload struct {
-	Id	int64
-        Key     int64
-        Serial      int64
-        Cts     time.Time	// client timestamp
-        Sts     time.Time	// server timestamp
-        Rts     time.Time	// receiver timestamp
-        Data    []byte		// random data
+	Id	int64		// client ID
+	Key    	int64		// server key
+	Serial	int64		// packet serial number
+	Cts	time.Time	// client timestamp
+	Sts	time.Time	// server timestamp
+	Rts	time.Time	// receiver timestamp
+	Data	[]byte		// random data
 }
 
 func newPayload(id int, key int, size int) payload {
 	m :=payload{}
-	m.Id = int64(id)	// client id - identify client thread
+	m.Id = int64(id)
 	m.Key = int64(key)
 	m.Data = make([]byte, size)
 	rand.Read(m.Data)

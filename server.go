@@ -27,7 +27,6 @@ import (
 func server(port string, key int) {
 	var ebuf *bytes.Buffer
 	nbuf := make([]byte, 65536)
-//	var testis net.Addr
 
 	serverkey := int64(key)
 	if serverkey == 0 {
@@ -37,14 +36,12 @@ func server(port string, key int) {
 	fmt.Print("Starting server mode, ")
 	pc, err := net.ListenPacket("udp","0.0.0.0:"+port)
 	if err != nil {
-		log.Fatal("server failed to open socket:", err)
+		log.Fatal("server:", err)
 	}
 	fmt.Println("listening on",pc.LocalAddr(),"with server key",serverkey)
 
 	for {
 		length,addr,err := pc.ReadFrom(nbuf)
-//		testis = addr
-//		fmt.Println("server addr:",testis)
 		if err != nil {
 			fmt.Println("server read error:",err)
 			continue

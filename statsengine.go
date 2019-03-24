@@ -61,7 +61,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 				feedWindow = []payload{}	// re-init feed
 
 				statsPrint(&local, printJson)
-				if printJson == "text" {
+				if printJson == "text" && local.totPkts != 0 {
 					fmt.Print(" queue: ",len(rp),"/",cap(rp))
 					fmt.Println()
 				}

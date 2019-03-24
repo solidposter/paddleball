@@ -30,6 +30,7 @@ type packetStats struct {
 
 type jsonReport struct {
 	Source		string
+	Sourcetype	string
 	Tag		string
 	ReceivedPackets		int64
 	DroppedPackets		int64
@@ -162,6 +163,7 @@ func statsPrint(ei *packetStats, printJson string) {
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
+		output.Sourcetype = "PADDLEBALL"
 		output.Tag = printJson
 		output.DroppedPackets = ei.drops
 		output.DuplicatePackets = ei.dups

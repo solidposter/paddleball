@@ -141,36 +141,36 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(ei *packetStats, printJson string) {
-	if ei.rcvdPkts == 0 {
+func statsPrint(stats *packetStats, printJson string) {
+	if stats.rcvdPkts == 0 {
 		return
 	}
 
 	if printJson == "text" {
-		fmt.Print("packets: ", ei.rcvdPkts)
-		fmt.Print(" dropPkts: ", ei.dropPkts)
-		fmt.Printf("(%.2f%%) ", float64(ei.dropPkts)/float64(ei.rcvdPkts)*100)
-		fmt.Print("re-ordered: ", ei.reordPkts)
-		fmt.Printf("(%.2f%%) ", float64(ei.reordPkts)/float64(ei.rcvdPkts)*100)
-		fmt.Print("duplicates: ", ei.dupPkts)
+		fmt.Print("packets: ", stats.rcvdPkts)
+		fmt.Print(" dropPkts: ", stats.dropPkts)
+		fmt.Printf("(%.2f%%) ", float64(stats.dropPkts)/float64(stats.rcvdPkts)*100)
+		fmt.Print("re-ordered: ", stats.reordPkts)
+		fmt.Printf("(%.2f%%) ", float64(stats.reordPkts)/float64(stats.rcvdPkts)*100)
+		fmt.Print("duplicates: ", stats.dupPkts)
 
-		avgRtt := ei.totRtt/time.Duration(ei.rcvdPkts)
-		fastest := ei.minRtt-avgRtt	// time below avg rtt
-		slowest := ei.maxRtt-avgRtt	// time above avg rtt
+		avgRtt := stats.totRtt/time.Duration(stats.rcvdPkts)
+		fastest := stats.minRtt-avgRtt	// time below avg rtt
+		slowest := stats.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
 		output.Sourcetype = "PADDLEBALLBETA"
 		output.Tag = printJson
-		output.DroppedPackets = ei.dropPkts
-		output.DuplicatePackets = ei.dupPkts
-		output.ReorderedPackets = ei.reordPkts
-		output.ReceivedPackets = ei.rcvdPkts
+		output.DroppedPackets = stats.dropPkts
+		output.DuplicatePackets = stats.dupPkts
+		output.ReorderedPackets = stats.reordPkts
+		output.ReceivedPackets = stats.rcvdPkts
 
-		output.AverageRTT =  float64(ei.totRtt/time.Duration(ei.rcvdPkts)) / 1000000	// avg rtt in ms
-		output.LowestRTT = float64(ei.minRtt) / 1000000			// lowest rtt in ms
-		output.HighestRTT = float64(ei.maxRtt) / 1000000		// highest rtt in ms
+		output.AverageRTT =  float64(stats.totRtt/time.Duration(stats.rcvdPkts)) / 1000000	// avg rtt in ms
+		output.LowestRTT = float64(stats.minRtt) / 1000000			// lowest rtt in ms
+		output.HighestRTT = float64(stats.maxRtt) / 1000000		// highest rtt in ms
 
 		b, err := json.Marshal(output)
 		if err != nil {

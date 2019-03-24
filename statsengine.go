@@ -24,8 +24,8 @@ import (
 )
 
 type packetStats struct {
-	Drops, Dups, Reords, TotPkts int64
-	MinRtt, MaxRtt, TotRtt time.Duration
+	drops, dups, reords, totPkts int64
+	minRtt, maxRtt, totRtt time.Duration
 }
 
 type jsonReport struct {
@@ -70,7 +70,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
 	local := packetStats {}			// local engine info
-	local.MinRtt =	time.Hour		// minRtt must not be zero, set high
+	local.minRtt =	time.Hour		// minRtt must not be zero, set high
 
 	for position, message := range workWindow {
 		updateRtt(message, &local)
@@ -78,17 +78,17 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		_, ok := serialNumbers[message.Id]
 		if !ok {	// initial packet from this sender ID
 			serialNumbers[message.Id] = message.Serial+1
-			local.TotPkts++
+			local.totPkts++
 			continue
 		}
 		if message.Serial == serialNumbers[message.Id] {	// correct order
-			local.TotPkts++
-			local.Dups = local.Dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
+			local.totPkts++
+			local.dups = local.dups + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
 			serialNumbers[message.Id]++
 			continue
 		}
 		if message.Serial < serialNumbers[message.Id] {		// lower than expected, re-order that already is handled
-			local.TotPkts++
+			local.totPkts++
 			continue
 		}
 
@@ -97,21 +97,21 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
-				local.Drops++
-				local.TotPkts++
+				local.drops++
+				local.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches == 1 {	// re-order
-				local.Reords++
-				local.TotPkts++
+				local.reords++
+				local.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
 			if matches > 1 {	// re-order and duplicates
-				local.Reords++
-				local.Dups = local.Dups+matches
-				local.TotPkts++
+				local.reords++
+				local.dups = local.dups+matches
+				local.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}
@@ -143,34 +143,34 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 }
 
 func statsPrint(ei *packetStats, printJson string) {
-	if ei.TotPkts == 0 {
+	if ei.totPkts == 0 {
 		return
 	}
 
 	if printJson == "text" {
-		fmt.Print("packets: ", ei.TotPkts)
-		fmt.Print(" Drops: ", ei.Drops)
-		fmt.Printf("(%.2f%%) ", float64(ei.Drops)/float64(ei.TotPkts)*100)
-		fmt.Print("re-ordered: ", ei.Reords)
-		fmt.Printf("(%.2f%%) ", float64(ei.Reords)/float64(ei.TotPkts)*100)
-		fmt.Print("duplicates: ", ei.Dups)
+		fmt.Print("packets: ", ei.totPkts)
+		fmt.Print(" drops: ", ei.drops)
+		fmt.Printf("(%.2f%%) ", float64(ei.drops)/float64(ei.totPkts)*100)
+		fmt.Print("re-ordered: ", ei.reords)
+		fmt.Printf("(%.2f%%) ", float64(ei.reords)/float64(ei.totPkts)*100)
+		fmt.Print("duplicates: ", ei.dups)
 
-		avgRtt := ei.TotRtt/time.Duration(ei.TotPkts)
-		fastest := ei.MinRtt-avgRtt	// time below avg rtt
-		slowest := ei.MaxRtt-avgRtt	// time above avg rtt
+		avgRtt := ei.totRtt/time.Duration(ei.totPkts)
+		fastest := ei.minRtt-avgRtt	// time below avg rtt
+		slowest := ei.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
 		output.Tag = printJson
-		output.DroppedPackets = ei.Drops
-		output.DuplicatePackets = ei.Dups
-		output.ReorderedPackets = ei.Reords
-		output.ReceivedPackets = ei.TotPkts
+		output.DroppedPackets = ei.drops
+		output.DuplicatePackets = ei.dups
+		output.ReorderedPackets = ei.reords
+		output.ReceivedPackets = ei.totPkts
 
-		output.AverageRTT =  float64(ei.TotRtt/time.Duration(ei.TotPkts)) / 1000000	// avg rtt in ms
-		output.LowestRTT = float64(ei.MinRtt) / 1000000			// lowest rtt in ms
-		output.HighestRTT = float64(ei.MaxRtt) / 1000000		// highest rtt in ms
+		output.AverageRTT =  float64(ei.totRtt/time.Duration(ei.totPkts)) / 1000000	// avg rtt in ms
+		output.LowestRTT = float64(ei.minRtt) / 1000000			// lowest rtt in ms
+		output.HighestRTT = float64(ei.maxRtt) / 1000000		// highest rtt in ms
 
 		b, err := json.Marshal(output)
 		if err != nil {
@@ -183,27 +183,27 @@ func statsPrint(ei *packetStats, printJson string) {
 }
 
 func statsUpdate(global *packetStats, local packetStats) {
-	global.Drops = global.Drops + local.Drops
-	global.Dups = global.Dups + local.Dups
-	global.Reords = global.Reords + local.Reords
-	global.TotPkts = global.TotPkts + local.TotPkts
-	global.TotRtt = global.TotRtt + local.TotRtt
-	if global.MinRtt > local.MinRtt {
-		global.MinRtt = local.MinRtt
+	global.drops = global.drops + local.drops
+	global.dups = global.dups + local.dups
+	global.reords = global.reords + local.reords
+	global.totPkts = global.totPkts + local.totPkts
+	global.totRtt = global.totRtt + local.totRtt
+	if global.minRtt > local.minRtt {
+		global.minRtt = local.minRtt
 	}
-	if global.MaxRtt < local.MaxRtt {
-		global.MaxRtt = local.MaxRtt
+	if global.maxRtt < local.maxRtt {
+		global.maxRtt = local.maxRtt
 	}
 }
 
 func updateRtt(message payload, local *packetStats) {
 		rtt := message.Rts.Sub(message.Cts)
 
-		local.TotRtt = local.TotRtt + rtt
-		if rtt < local.MinRtt {
-			local.MinRtt = rtt
+		local.totRtt = local.totRtt + rtt
+		if rtt < local.minRtt {
+			local.minRtt = rtt
 		}
-		if rtt > local.MaxRtt {
-			local.MaxRtt = rtt
+		if rtt > local.maxRtt {
+			local.maxRtt = rtt
 		}
 }

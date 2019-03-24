@@ -98,7 +98,6 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
 				local.drops++
-				local.totPkts++
 				serialNumbers[message.Id]++
 				continue
 			}

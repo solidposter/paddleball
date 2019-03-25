@@ -177,7 +177,6 @@ func statsPrint(stats *packetStats, printJson string) {
 			fmt.Println("statsPrint error:",err)
 		} else {
 			os.Stdout.Write(b)
-			fmt.Println()
 		}
 	}
 }

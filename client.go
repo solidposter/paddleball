@@ -36,6 +36,7 @@ func client(rp chan<- payload, id int, addr string, key int, rate int, size int)
 func receiver(rp chan<- payload, conn net.Conn, key int) {
 	buf := make([]byte, 65536)
 	message := payload{}
+	pbdrop := 0		// drop counter
 
 	for {
 		length, err := conn.Read(buf)
@@ -50,12 +51,14 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 			continue
 		}
 		message.Rts = rts
+		message.Pbdrop = int64(pbdrop)	// copy the drop counter to the packet
 
 		select {
 			case rp <- message:	// put the packet in the channel
+				pbdrop = 0	// reset the receiver drop counter
 
-			default:		// channel full, discard packet
-				fmt.Println("receiver: channel full, discarding packet")	// replace print with a counter
+			default:		// channel full, discard packet, increment drop counter
+				pbdrop = pbdrop+1
 		}
 	}
 }

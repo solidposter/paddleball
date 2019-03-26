@@ -32,6 +32,7 @@ type payload struct {
 	Cts	time.Time	// client timestamp
 	Sts	time.Time	// server timestamp
 	Rts	time.Time	// receiver timestamp
+	Pbdrop	int64		// Paddleball drops
 	Data	[]byte		// random data
 }
 

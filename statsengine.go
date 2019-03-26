@@ -25,6 +25,7 @@ import (
 
 type packetStats struct {
 	dropPkts, dupPkts, reordPkts, rcvdPkts int64
+	pbdropPkts int64
 	minRtt, maxRtt, totRtt time.Duration
 }
 
@@ -39,6 +40,7 @@ type jsonReport struct {
 	AverageRTT		float64
 	LowestRTT		float64
 	HighestRTT		float64
+	PBQueueDroppedPackets	int
 	PBQueueLength		int
 	PBQueueCapacity		int
 }
@@ -68,9 +70,10 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 }
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
-	local := packetStats {}			// local engine info
+	local := packetStats {}		// local engine info
 
 	for position, message := range workWindow {
+		local.pbdropPkts = local.pbdropPkts + message.Pbdrop
 		updateRtt(message, &local)
 
 		_, ok := serialNumbers[message.Id]
@@ -157,6 +160,7 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 		slowest := stats.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
 		fmt.Print(" queue: ",qlen ,"/", qcap)
+		fmt.Print(" qdrops: ", stats.pbdropPkts)
 		fmt.Println()
 
 	} else {
@@ -175,6 +179,7 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 
 		output.PBQueueLength = qlen
 		output.PBQueueCapacity = qcap
+		output.PBQueueDroppedPackets = int(stats.pbdropPkts)
 
 		b, err := json.Marshal(output)
 		if err != nil {

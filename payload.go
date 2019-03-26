@@ -27,7 +27,7 @@ import (
 
 type payload struct {
 	Id	int64		// client ID
-	Key    	int64		// server key
+	Key	int64		// server key
 	Serial	int64		// packet serial number
 	Cts	time.Time	// client timestamp
 	Sts	time.Time	// server timestamp

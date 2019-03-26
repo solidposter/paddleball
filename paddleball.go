@@ -96,7 +96,7 @@ func trapper(global *packetStats) {
 	<- cs
 
 	fmt.Println()
-	statsPrint(global, "text")	// no need for JSON here
+	statsPrint(global, "text",0,0)	// no need for JSON here
 	fmt.Println()
 	os.Exit(0)
 }

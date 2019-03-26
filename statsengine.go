@@ -39,6 +39,8 @@ type jsonReport struct {
 	AverageRTT		float64
 	LowestRTT		float64
 	HighestRTT		float64
+	PBQueueLength		int
+	PBQueueCapacity		int
 }
 
 func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
@@ -60,11 +62,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 				workWindow = feedWindow		// change feed to work
 				feedWindow = []payload{}	// re-init feed
 
-				statsPrint(&local, printJson)
-				if printJson == "text" && local.rcvdPkts != 0 {
-					fmt.Print(" queue: ",len(rp),"/",cap(rp))
-					fmt.Println()
-				}
+				statsPrint(&local, printJson, len(rp), cap(rp))
 		}
 	}
 }
@@ -141,7 +139,7 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(stats *packetStats, printJson string) {
+func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 	if stats.rcvdPkts == 0 {
 		return
 	}
@@ -158,6 +156,9 @@ func statsPrint(stats *packetStats, printJson string) {
 		fastest := stats.minRtt-avgRtt	// time below avg rtt
 		slowest := stats.maxRtt-avgRtt	// time above avg rtt
 		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
+		fmt.Print(" queue: ",qlen ,"/", qcap)
+		fmt.Println()
+
 	} else {
 		output := jsonReport{}
 		output.Source = "PADDLEBALL"
@@ -171,6 +172,9 @@ func statsPrint(stats *packetStats, printJson string) {
 		output.AverageRTT =  float64(stats.totRtt/time.Duration(stats.rcvdPkts)) / 1000000	// avg rtt in ms
 		output.LowestRTT = float64(stats.minRtt) / 1000000			// lowest rtt in ms
 		output.HighestRTT = float64(stats.maxRtt) / 1000000		// highest rtt in ms
+
+		output.PBQueueLength = qlen
+		output.PBQueueCapacity = qcap
 
 		b, err := json.Marshal(output)
 		if err != nil {

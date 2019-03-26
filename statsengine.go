@@ -150,9 +150,9 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 	if printJson == "text" {
 		fmt.Print("received: ", stats.rcvdPkts)
 		fmt.Print(" dropped: ", stats.dropPkts)
-		fmt.Printf("(%.2f%%) ", float64(stats.dropPkts)/float64(stats.rcvdPkts)*100)
+		fmt.Printf("(%.2f%%) ", float64(stats.dropPkts)/float64(stats.rcvdPkts+stats.dropPkts)*100)
 		fmt.Print("re-ordered: ", stats.reordPkts)
-		fmt.Printf("(%.2f%%) ", float64(stats.reordPkts)/float64(stats.rcvdPkts)*100)
+		fmt.Printf("(%.2f%%) ", float64(stats.reordPkts)/float64(stats.rcvdPkts+stats.dropPkts)*100)
 		fmt.Print("duplicates: ", stats.dupPkts)
 
 		avgRtt := stats.totRtt/time.Duration(stats.rcvdPkts)

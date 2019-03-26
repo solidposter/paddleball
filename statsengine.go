@@ -203,6 +203,8 @@ func statsUpdate(global *packetStats, local packetStats) {
 	if local.maxRtt > global.maxRtt {
 		global.maxRtt = local.maxRtt
 	}
+
+	global.pbdropPkts = global.pbdropPkts+local.pbdropPkts
 }
 
 func updateRtt(message payload, local *packetStats) {

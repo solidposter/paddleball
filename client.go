@@ -50,7 +50,13 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 			continue
 		}
 		message.Rts = rts
-		rp <- message
+
+		select {
+			case rp <- message:	// put the packet in the channel
+
+			default:		// channel full, discard packet
+				fmt.Println("receiver: channel full, discarding packet")	// replace print with a counter
+		}
 	}
 }
 

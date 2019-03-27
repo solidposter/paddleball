@@ -55,10 +55,10 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 
 		select {
 			case rp <- message:	// put the packet in the channel
-				pbdrop = 0	// reset the receiver drop counter
+				pbdrop = 0	// reset the drop counter
 
 			default:		// channel full, discard packet, increment drop counter
-				pbdrop = pbdrop+1
+				pbdrop++
 		}
 	}
 }

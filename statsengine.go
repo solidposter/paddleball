@@ -70,7 +70,7 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 }
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
-	local := packetStats {}		// local engine info
+	local := packetStats {}
 
 	for position, message := range workWindow {
 		local.pbdropPkts = local.pbdropPkts + message.Pbdrop
@@ -84,7 +84,7 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		}
 		if message.Serial == serialNumbers[message.Id] {	// correct order
 			local.rcvdPkts++
-			local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)	// find duplicates
+			local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)
 			serialNumbers[message.Id]++
 			continue
 		}
@@ -95,7 +95,7 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 
 		// message.Serial is larger than expected serial.
 		// increment til we catch up
-		for ; message.Serial > serialNumbers[message.Id]; {	// serial larger, drop or re-order
+		for ; message.Serial > serialNumbers[message.Id]; {
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
 				local.dropPkts++
@@ -118,7 +118,6 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		}
 		serialNumbers[message.Id]++
 	}
-
 	return local
 }
 
@@ -172,10 +171,10 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 		output.DuplicatePackets = stats.dupPkts
 		output.ReorderedPackets = stats.reordPkts
 		output.ReceivedPackets = stats.rcvdPkts
-
-		output.AverageRTT =  float64(stats.totRtt/time.Duration(stats.rcvdPkts)) / 1000000	// avg rtt in ms
-		output.LowestRTT = float64(stats.minRtt) / 1000000			// lowest rtt in ms
-		output.HighestRTT = float64(stats.maxRtt) / 1000000		// highest rtt in ms
+		// RTT in ms
+		output.AverageRTT =  float64(stats.totRtt/time.Duration(stats.rcvdPkts)) / 1000000
+		output.LowestRTT = float64(stats.minRtt) / 1000000
+		output.HighestRTT = float64(stats.maxRtt) / 1000000
 
 		output.PBQueueLength = qlen
 		output.PBQueueCapacity = qcap

@@ -30,8 +30,6 @@ type packetStats struct {
 }
 
 type jsonReport struct {
-	Source		string
-	Sourcetype	string
 	Tag		string
 	ReceivedPackets		int64
 	DroppedPackets		int64
@@ -164,8 +162,6 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 
 	} else {
 		output := jsonReport{}
-		output.Source = "PADDLEBALL"
-		output.Sourcetype = "PADDLEBALLBETA"
 		output.Tag = printJson
 		output.DroppedPackets = stats.dropPkts
 		output.DuplicatePackets = stats.dupPkts

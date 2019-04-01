@@ -30,7 +30,8 @@ type packetStats struct {
 }
 
 type jsonReport struct {
-	Tag		string
+	Tag			string
+	TimestampUtc		time.Time
 	ReceivedPackets		int64
 	DroppedPackets		int64
 	DuplicatePackets	int64
@@ -163,6 +164,7 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 	} else {
 		output := jsonReport{}
 		output.Tag = printJson
+		output.TimestampUtc = time.Now().UTC()
 		output.DroppedPackets = stats.dropPkts
 		output.DuplicatePackets = stats.dupPkts
 		output.ReorderedPackets = stats.reordPkts

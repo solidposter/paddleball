@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net"
 	"time"
@@ -41,18 +40,17 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 	for {
 		length, err := conn.Read(buf)
 		if err != nil {
-			fmt.Println("receiver:", err)	// remove this print when going live
 			continue
 		}
+
 		rts := time.Now()
 		message = decode(buf,length)
 		if message.Key != int64(key) {
-			fmt.Println("receiver bad key:", message)
 			continue
 		}
+
 		message.Rts = rts
 		message.Pbdrop = int64(pbdrop)	// copy the drop counter to the packet
-
 		select {
 			case rp <- message:	// put the packet in the channel
 				pbdrop = 0	// reset the drop counter

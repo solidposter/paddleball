@@ -43,14 +43,11 @@ func server(port string, key int) {
 	for {
 		length,addr,err := pc.ReadFrom(nbuf)
 		if err != nil {
-			fmt.Println("server read error:",err)
 			continue
 		}
 
 		message := decode(nbuf, length)
 		if message.Key != serverkey {
-			fmt.Print("server error: invalid key from ",addr, " ")
-			fmt.Println(message)	// remove this print when going live
 			continue
 		}
 

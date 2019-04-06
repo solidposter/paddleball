@@ -76,20 +76,19 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		updateRtt(message, &local)
 
 		_, ok := serialNumbers[message.Id]
-		if !ok {	// initial packet from this sender ID
+		if !ok {	// Initial packet from this sender ID.
 			serialNumbers[message.Id] = message.Serial+1
 			local.rcvdPkts++
 			continue
 		}
 
-		// lower serial than expected. Already calculated as drop/dup/re-order.
+		// Lower serial than expected. Already calculated as drop/dup/re-order.
 		if message.Serial < serialNumbers[message.Id] {
 			local.rcvdPkts++
 			continue
 		}
 
-		// message.Serial is larger than expected serial.
-		// increment til we catch up
+		// Higher serial than expected. Increment til we catch up.
 		for ; message.Serial > serialNumbers[message.Id]; {
 			matches := findPacket(serialNumbers, workWindow, feedWindow, position, message.Id)
 			if matches == 0 {	// packet loss
@@ -112,7 +111,7 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 			}
 		}
 
-		// expected message.Serial
+		// Expected serial.
 		local.rcvdPkts++
 		local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)
 		serialNumbers[message.Id]++

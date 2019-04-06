@@ -81,13 +81,9 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 			local.rcvdPkts++
 			continue
 		}
-		if message.Serial == serialNumbers[message.Id] {	// correct order
-			local.rcvdPkts++
-			local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)
-			serialNumbers[message.Id]++
-			continue
-		}
-		if message.Serial < serialNumbers[message.Id] {		// lower than expected, re-order that already is handled
+
+		// lower serial than expected. Already calculated as drop/dup/re-order.
+		if message.Serial < serialNumbers[message.Id] {
 			local.rcvdPkts++
 			continue
 		}
@@ -115,6 +111,10 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 				continue
 			}
 		}
+
+		// expected message.Serial
+		local.rcvdPkts++
+		local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)
 		serialNumbers[message.Id]++
 	}
 	return local

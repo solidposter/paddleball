@@ -72,7 +72,7 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {
-			log.Fatal("sender:", err)
+			log.Print("sender: ",err)
 		}
 		message.Increment()
 		<-ticker.C

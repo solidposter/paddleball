@@ -69,8 +69,14 @@ func statsEngine(rp <-chan payload, global *packetStats,  printJson string) {
 }
 
 func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
-	local := packetStats {}
+	local := packetStats{}
 
+	// Check workWindow for the lowest serial numbers for each Id.
+	// Update the expected serial numbers and return the number
+	// of missing packets.
+	local.dropPkts = fastForward(serialNumbers, workWindow)
+
+	// Process the workWindow packet by packet.
 	for position, message := range workWindow {
 		local.pbdropPkts = local.pbdropPkts + message.Pbdrop
 		updateRtt(message, &local)
@@ -117,6 +123,36 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		serialNumbers[message.Id]++
 	}
 	return local
+}
+
+func fastForward(serialNumbers map[int64]int64, workWindow []payload) int64 {
+	var dropPkts	int64
+	lowest := make(map[int64]int64)
+
+	// Populate lowest with the lowest serial number
+	// for each Id in workWindow
+	for _,v := range workWindow {
+		_, ok := lowest[v.Id]
+		if !ok {
+			lowest[v.Id] = v.Serial
+		} else {
+			if v.Serial < lowest[v.Id] {
+				lowest[v.Id] = v.Serial
+			}
+		}
+	}
+
+	// Compare expected serial numbers with the lowest number found.
+	// If there are packets missing increment drop counter and update
+	// th expected serial number
+	for id,_ := range lowest {
+		_, ok := serialNumbers[id]
+		if ok && (serialNumbers[id] < lowest[id]) {
+			dropPkts = dropPkts + (lowest[id]-serialNumbers[id])
+			serialNumbers[id] = lowest[id]
+		}
+	}
+	return dropPkts
 }
 
 func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow []payload, position int, id int64) int64 {

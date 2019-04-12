@@ -130,7 +130,7 @@ func fastForward(serialNumbers map[int64]int64, workWindow []payload) int64 {
 	lowest := make(map[int64]int64)
 
 	// Populate lowest with the lowest serial number
-	// for each Id in workWindow
+	// for each Id in workWindow.
 	for _,v := range workWindow {
 		_, ok := lowest[v.Id]
 		if !ok {
@@ -144,7 +144,7 @@ func fastForward(serialNumbers map[int64]int64, workWindow []payload) int64 {
 
 	// Compare expected serial numbers with the lowest number found.
 	// If there are packets missing increment drop counter and update
-	// th expected serial number
+	// the expected serial number.
 	for id,_ := range lowest {
 		_, ok := serialNumbers[id]
 		if ok && (serialNumbers[id] < lowest[id]) {

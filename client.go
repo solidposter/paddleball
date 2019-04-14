@@ -68,13 +68,12 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 
 	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
-		message.Cts = time.Now()
+		message.Cts = <-ticker.C
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {
 			log.Print("sender: ",err)
 		}
 		message.Increment()
-		<-ticker.C
 	}
 }

@@ -26,6 +26,11 @@ import (
 	"time"
 )
 
+var (   // Populated at build time.
+	version	string
+	date	string
+)
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
@@ -35,7 +40,14 @@ func main() {
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
 	jsonPtr := flag.String("j", "text", "print in JSON format with (not the word text)")
+	versPtr := flag.Bool("v", false, "print version info")
 	flag.Parse()
+
+	if *versPtr {
+		fmt.Println("Version:", version)
+		fmt.Println("Date:", date)
+		os.Exit(0)
+	}
 
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {

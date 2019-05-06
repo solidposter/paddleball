@@ -34,14 +34,14 @@ func server(port string, key int) {
 	}
 
 	fmt.Print("Starting server mode, ")
-	pc, err := net.ListenPacket("udp","0.0.0.0:"+port)
+	pc, err := net.ListenPacket("udp", "0.0.0.0:"+port)
 	if err != nil {
 		log.Fatal("server:", err)
 	}
-	fmt.Println("listening on",pc.LocalAddr(),"with server key",serverkey)
+	fmt.Println("listening on", pc.LocalAddr(), "with server key", serverkey)
 
 	for {
-		length,addr,err := pc.ReadFrom(nbuf)
+		length, addr, err := pc.ReadFrom(nbuf)
 		if err != nil {
 			continue
 		}

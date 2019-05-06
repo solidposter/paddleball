@@ -26,9 +26,9 @@ import (
 	"time"
 )
 
-var (   // Populated at build time.
-	version	string
-	date	string
+var ( // Populated at build time.
+	version string
+	date    string
 )
 
 func main() {
@@ -54,7 +54,7 @@ func main() {
 		if len(flag.Args()) == 0 {
 			server("0", *keyPtr)
 		} else if len(flag.Args()) == 1 {
-			server(flag.Args()[0],*keyPtr)
+			server(flag.Args()[0], *keyPtr)
 		} else {
 			fmt.Println("Error, only the server port should follow the options.", flag.Args())
 			os.Exit(1)
@@ -90,25 +90,25 @@ func main() {
 	}
 
 	// start statistics engine
-	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2 )	// buffer return payload up to two second
+	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
 	go statsEngine(rp, &global, *jsonPtr)
-	time.Sleep(20*time.Millisecond)		// give the statsengine time to init
+	time.Sleep(20 * time.Millisecond) // give the statsengine time to init
 	// start the clients, staged over a second
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
 		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr, *bytePtr)
-		<- ticker.C
+		<-ticker.C
 	}
-	<-(chan int)(nil)	// wait forever
+	<-(chan int)(nil) // wait forever
 }
 
 func trapper(global *packetStats) {
 	cs := make(chan os.Signal)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
-	<- cs
+	<-cs
 
 	fmt.Println()
-	statsPrint(global, "text",0,0)	// no need for JSON here
+	statsPrint(global, "text", 0, 0) // no need for JSON here
 	fmt.Println()
 	os.Exit(0)
 }

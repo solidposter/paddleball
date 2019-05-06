@@ -24,7 +24,7 @@ import (
 )
 
 func client(rp chan<- payload, id int, addr string, key int, rate int, size int) {
-	conn, err := net.Dial("udp",addr)
+	conn, err := net.Dial("udp", addr)
 	if err != nil {
 		log.Fatal("client:", err)
 	}
@@ -35,7 +35,7 @@ func client(rp chan<- payload, id int, addr string, key int, rate int, size int)
 func receiver(rp chan<- payload, conn net.Conn, key int) {
 	buf := make([]byte, 65536)
 	message := payload{}
-	pbdrop := 0		// drop counter
+	pbdrop := 0 // drop counter
 
 	for {
 		length, err := conn.Read(buf)
@@ -44,19 +44,19 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 		}
 
 		rts := time.Now()
-		message = decode(buf,length)
+		message = decode(buf, length)
 		if message.Key != int64(key) {
 			continue
 		}
 
 		message.Rts = rts
-		message.Pbdrop = int64(pbdrop)	// copy the drop counter to the packet
+		message.Pbdrop = int64(pbdrop) // copy the drop counter to the packet
 		select {
-			case rp <- message:	// put the packet in the channel
-				pbdrop = 0	// reset the drop counter
+		case rp <- message: // put the packet in the channel
+			pbdrop = 0 // reset the drop counter
 
-			default:		// channel full, discard packet, increment drop counter
-				pbdrop++
+		default: // channel full, discard packet, increment drop counter
+			pbdrop++
 		}
 	}
 }
@@ -66,13 +66,13 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 
 	message := newPayload(id, key, size)
 
-	ticker := time.NewTicker( time.Duration(1000000000/rate) * time.Nanosecond)
+	ticker := time.NewTicker(time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
 		message.Cts = <-ticker.C
 		buf = message.encode()
 		_, err := conn.Write(buf.Bytes())
 		if err != nil {
-			log.Print("sender: ",err)
+			log.Print("sender: ", err)
 		}
 		message.Increment()
 	}

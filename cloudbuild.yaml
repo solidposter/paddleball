@@ -1,7 +1,22 @@
 steps:
+- name: gcr.io/cloud-builders/docker
+  entrypoint: bash
+  args: ['-c', 'docker pull gcr.io/$PROJECT_ID/kindred/paddleball:$_VERSION && { echo "[ERROR] refusing to overwrite image!"; exit 1; } || echo "continuing, version of image not built yet"']
+  id: 'versioncheck'
+
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/kindred/paddleball:$_PR_NUMBER', '.' ]
+  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/kindred/paddleball:$_VERSION', '.' ]
+  wait_for: ['versioncheck']
+  id: 'version'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['tag', 'gcr.io/$PROJECT_ID/kindred/paddleball:$_VERSION', 'gcr.io/$PROJECT_ID/kindred/paddleball']
+  wait_for: ['version']
+  id: 'latest'
+
 substitutions:
-  _PR_NUMBER: latest
+  _VERSION: '1.0.1' # manually update
+
 images:
-- 'gcr.io/$PROJECT_ID/kindred/paddleball:$_PR_NUMBER'
+- 'gcr.io/$PROJECT_ID/kindred/paddleball:$_VERSION'
+- 'gcr.io/$PROJECT_ID/kindred/paddleball'

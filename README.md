@@ -44,7 +44,7 @@ Start the client on another host
 docker run -it paddleball -k 1984 x.x.x.x:2222
 ```
 ### Start the server and client on the same host
-If the server and client docker container are on the same host you need top put them on the same network, first create the network then start the server and client
+If the server and client docker container are on the same host you need top put them on the same network to be able to communicate, first create the network then start the server and client
 ```bash
 docker network create paddleballnet
 docker run --name server --net paddleballnet -it --expose 2222 -p 2222:2222/udp paddleball -k 1984 -s 2222

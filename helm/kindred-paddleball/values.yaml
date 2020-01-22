@@ -12,11 +12,6 @@ owningTeam: PE
 
 imagePullSecrets: []
 
-image:
-  repository: docker.kindredgroup.com/mozilla/send
-  tag: v3.0.20
-  pullPolicy: IfNotPresent
-
 #
 # The listening ports of your component
 #

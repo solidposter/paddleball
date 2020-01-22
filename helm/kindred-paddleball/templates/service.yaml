@@ -1,0 +1,19 @@
+{{- if .Values.serverMode }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kindred-paddleball.fullname" . }}
+  labels:
+{{ include "kindred-paddleball.labels" . | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      nodePort: {{ .Values.service.nodePort }}
+      protocol: UDP
+      name: udp
+  selector:
+    app.kubernetes.io/name: {{ include "kindred-paddleball.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

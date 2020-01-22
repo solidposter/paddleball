@@ -1,0 +1,49 @@
+#
+# The number of pod replicas, keep mininum 2 for availability and zero downtime releases
+#
+replicaCount: 1
+
+image:
+  repository: gcr.io/public-registry-265316/kindred/paddleball
+  tag: 1.0.8
+  pullPolicy: IfNotPresent
+
+owningTeam: PE
+
+imagePullSecrets: []
+
+#
+# Run in server or client mode
+#
+serverMode: true
+
+#
+# The listening ports of your component
+#
+service:
+  type: NodePort
+  port: 2222
+  nodePort: 32222
+#
+# Server config
+#
+server:
+  name: paddleball
+  key: 1984
+#
+# Client config
+#
+client:
+  key: 1984
+  host: 
+  port: 32222
+#
+# Override the default capacity allocation for the container
+#
+resources:
+  requests:
+    cpu: 100m
+    memory: 16M
+  limits:
+    cpu: 1
+    memory: 16M

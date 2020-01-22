@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kindred-paddleball.fullname" . }}
+  labels:
+{{ include "kindred-paddleball.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kindred-paddleball.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kindred-paddleball.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Chart.Version }}
+        kindredgroup.com/owning-team: {{ .Values.owningTeam | default "unknown" }}
+        redis-client: "true"
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Values.server.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["paddleball"]
+          args: ["-k", {{ .Values.server.key | quote }}, "-s", {{ .Values.service.port | quote }}]
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: UDP
+          livenessProbe:
+{{ include "kindred-paddleball.liveness-probe" . | indent 12 }}
+          readinessProbe:
+{{ include "kindred-paddleball.readiness-probe" . | indent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

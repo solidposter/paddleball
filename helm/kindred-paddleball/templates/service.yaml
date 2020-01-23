@@ -9,8 +9,8 @@ spec:
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
-      protocol: TCP
-      name: http
+      protocol: UDP
+      name: udp
   selector:
     app.kubernetes.io/name: {{ include "kindred-paddleball.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

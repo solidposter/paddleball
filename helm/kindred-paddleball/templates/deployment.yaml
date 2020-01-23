@@ -27,16 +27,11 @@ spec:
         - name: {{ .Values.server.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["paddleball"]
           args: ["-k", {{ .Values.server.key | quote }}, "-s", {{ .Values.service.port | quote }}]
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: UDP
-          livenessProbe:
-{{ include "kindred-paddleball.liveness-probe" . | indent 12 }}
-          readinessProbe:
-{{ include "kindred-paddleball.readiness-probe" . | indent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

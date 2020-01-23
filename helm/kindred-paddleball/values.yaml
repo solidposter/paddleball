@@ -34,26 +34,3 @@ resources:
   limits:
     cpu: 1
     memory: 16M
-
-#
-# Override default liveness and readiness probes for the container
-#
-# livenessProbe:
-#   httpGet:
-#     path: /health
-#     port: admin
-#   initialDelaySeconds: 2
-#   periodSeconds: 5
-#   timeoutSeconds: 1
-#   successThreshold: 1
-#   failureThreshold: 3
-
-# readinessProbe:
-#   httpGet:
-#     path: /health
-#     port: admin
-#   initialDelaySeconds: 1
-#   periodSeconds: 5
-#   timeoutSeconds: 1
-#   successThreshold: 1
-#   failureThreshold: 3

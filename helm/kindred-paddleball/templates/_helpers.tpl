@@ -43,28 +43,3 @@ app.kubernetes.io/version: {{ .Chart.Version | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
-
-{{/**
-   * Default liveness and readiness probes
-   */}}
-{{- define "kindred-paddleball.liveness-probe" -}}
-httpGet:
-  path: /
-  port: {{ .Values.service.port }}
-initialDelaySeconds: 20
-periodSeconds: 10
-timeoutSeconds: 1
-successThreshold: 1
-failureThreshold: 5
-{{- end -}}
-
-{{- define "kindred-paddleball.readiness-probe" -}}
-httpGet:
-  path: /
-  port: {{ .Values.service.port }}
-initialDelaySeconds: 20
-periodSeconds: 10
-timeoutSeconds: 1
-successThreshold: 1
-failureThreshold: 10
-{{- end -}}

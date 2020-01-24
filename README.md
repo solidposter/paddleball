@@ -55,7 +55,12 @@ docker run --name client --net paddleballnet -it paddleball -k 1984 server:2222
 ```bash
 cd helm/kindred-paddleball
 mkdir manifests
-helm template -f values.yaml --output-dir ./manifests --set serverMode=false,client.host=<host>
-helm template  --output-dir ./manifests .
-kubectl apply -f manifests/kindred-paddleball/templates
+# client
+kubectl create namespace paddleballclient
+helm template -f values.yaml --output-dir ./manifests --set serverMode=false,client.host=<host> .
+kubectl apply -n paddleballclient -f manifests/kindred-paddleball/templates
+# server
+kubectl create namespace paddleball
+helm template -f values.yaml --output-dir ./manifests --set serverMode=true .
+kubectl apply -n paddleball -f manifests/kindred-paddleball/templates
 ```

@@ -43,3 +43,14 @@ app.kubernetes.io/version: {{ .Chart.Version | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Contaner args
+*/}}
+{{- define "kindred-paddleball.args" -}}
+{{- if .Values.serverMode }}
+["-k", {{ .Values.server.key | quote }}, "-s", {{ .Values.service.port | quote }}]
+{{- else -}}
+["-k", {{ .Values.client.key | quote }}, "{{ .Values.client.host }}:{{ .Values.client.port }}"]
+{{- end }}
+{{- end -}}

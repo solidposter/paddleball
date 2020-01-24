@@ -5,7 +5,7 @@ replicaCount: 1
 
 image:
   repository: gcr.io/public-registry-265316/kindred/paddleball
-  tag: 1.0.3
+  tag: 1.0.6
   pullPolicy: IfNotPresent
 
 owningTeam: PE
@@ -13,17 +13,30 @@ owningTeam: PE
 imagePullSecrets: []
 
 #
+# Run in server or client mode
+#
+serverMode: true
+
+#
 # The listening ports of your component
 #
 service:
   type: NodePort
   port: 2222
-  targetPort: 32222 
-
+  nodePort: 32222
+#
+# Server config
+#
 server:
   name: paddleball
   key: 1984
-
+#
+# Client config
+#
+client:
+  key: 1984
+  host: 
+  port: 32222
 #
 # Override the default capacity allocation for the container
 #

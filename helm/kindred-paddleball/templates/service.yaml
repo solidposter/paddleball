@@ -1,3 +1,4 @@
+{{- if .Values.serverMode }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,8 +10,10 @@ spec:
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
+      nodePort: {{ .Values.service.nodePort }}
       protocol: UDP
       name: udp
   selector:
     app.kubernetes.io/name: {{ include "kindred-paddleball.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

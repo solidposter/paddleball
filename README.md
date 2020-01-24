@@ -50,3 +50,12 @@ docker network create paddleballnet
 docker run --name server --net paddleballnet -it --expose 2222 -p 2222:2222/udp paddleball -k 1984 -s 2222
 docker run --name client --net paddleballnet -it paddleball -k 1984 server:2222
 ```
+
+## Deploy using helm and kubectl
+```bash
+cd helm/kindred-paddleball
+mkdir manifests
+helm template -f values.yaml --output-dir ./manifests --set serverMode=false,client.host=<host>
+helm template  --output-dir ./manifests .
+kubectl apply -f manifests/kindred-paddleball/templates
+```

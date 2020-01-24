@@ -15,7 +15,7 @@ steps:
   id: 'latest'
 
 substitutions:
-  _VERSION: '1.0.7' # manually update
+  _VERSION: '1.0.8' # manually update
 
 images:
 - 'gcr.io/$PROJECT_ID/kindred/paddleball:$_VERSION'

@@ -1,0 +1,4 @@
+*.swp
+/.idea
+*.tgz
+.DS_Store

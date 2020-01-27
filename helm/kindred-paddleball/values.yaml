@@ -5,11 +5,17 @@ replicaCount: 1
 
 image:
   repository: gcr.io/public-registry-265316/kindred/paddleball
-  tag: 1.0.9
+<<<<<<< HEAD
+  tag: 1.0.10
+  pullPolicy: IfNotPresent
+
+=======
+  tag: 1.0.8
   pullPolicy: IfNotPresent
 
 owningTeam: PE
 
+>>>>>>> bf4b296cae7cf8193400899e94493db6c2c15bb1
 imagePullSecrets: []
 
 #
@@ -29,12 +35,20 @@ service:
 #
 server:
   name: paddleball
+<<<<<<< HEAD
+  key: 
+=======
   key: 1984
+>>>>>>> bf4b296cae7cf8193400899e94493db6c2c15bb1
 #
 # Client config
 #
 client:
+<<<<<<< HEAD
+  key: 
+=======
   key: 1984
+>>>>>>> bf4b296cae7cf8193400899e94493db6c2c15bb1
   host: 
   port: 32222
 #
@@ -42,8 +56,16 @@ client:
 #
 resources:
   requests:
+<<<<<<< HEAD
+    cpu: 10m
+    memory: 10Mi
+  limits:
+    cpu: 100m
+    memory: 1M
+=======
     cpu: 100m
     memory: 16M
   limits:
     cpu: 1
     memory: 16M
+>>>>>>> bf4b296cae7cf8193400899e94493db6c2c15bb1

@@ -49,7 +49,7 @@ docker run -it paddleball -k 1984 x.x.x.x:2222
 cd helm/kindred-paddleball
 # client
 kubectl create namespace paddleballclient
-helm install -n paddleballclient -f values.yaml --set serverMode=false,client.host=<host>,client.key=<key> paddleballclient .
+helm install -n paddleballclient -f values.yaml --set serverMode=false,client.host=<host>,client.key=<key>,owningTeam=<team>,logJson=true,client.tag=<tag> paddleballclient .
 # server
 kubectl create namespace paddleball
 helm install -n paddleball -f values.yaml --set serverMode=true,server.key=<key> paddleball .

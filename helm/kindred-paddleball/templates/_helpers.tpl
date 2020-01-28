@@ -51,6 +51,10 @@ Contaner args
 {{- if .Values.serverMode }}
 ["-k", {{ .Values.server.key | quote }}, "-s", {{ .Values.service.port | quote }}]
 {{- else -}}
+{{- if .Values.logJson  }}
+["-j", "JSON","-k", {{ .Values.client.key | quote }}, "{{ .Values.client.host }}:{{ .Values.client.port }}"]
+{{- else -}}
 ["-k", {{ .Values.client.key | quote }}, "{{ .Values.client.host }}:{{ .Values.client.port }}"]
+{{- end }}
 {{- end }}
 {{- end -}}

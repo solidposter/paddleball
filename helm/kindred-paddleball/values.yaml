@@ -16,6 +16,11 @@ imagePullSecrets: []
 serverMode: true
 
 #
+# Log as JSON
+#
+logJson: true
+
+#
 # The listening ports of your component
 #
 service:

@@ -27,6 +27,9 @@ spec:
         - name: {{ .Values.server.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PADDLEBALL_TAG
+              value: {{ .Values.client.tag }}
           args: {{ include "kindred-paddleball.args" . | trim }}
           ports:
             - name: http

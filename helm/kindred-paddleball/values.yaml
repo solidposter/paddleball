@@ -46,8 +46,8 @@ client:
 #
 resources:
   requests:
-    cpu: 10m
-    memory: 20Mi
+    cpu: 2
+    memory: 100Mi
   limits:
-    cpu: 100m
+    cpu: 2
     memory: 100Mi

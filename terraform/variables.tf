@@ -1,17 +1,13 @@
-
-variable "assume_role_arn" {
-  default = "role_arn = "arn:aws:iam::996268458099:role/TerraformCrossAccount""
+variable "key_name" {
+  description = "Access keys"
 }
 
 variable "region" {
-  default = "eu-central-1"
 }
 
 variable "availability_zones" {
-  default = ["eu-central-1a"]
 }
 variable "vpc_id" {
-  default = "vpc-d998f8b1"
 }
 
 variable "instance_type" {
@@ -19,21 +15,11 @@ variable "instance_type" {
   default     = "t2.nano"
 }
 
-variable "key_name" {
-  default = "CloudFormation-eu-central-1"
-}
-
 variable "instance_tags" {
   default = {
-    Component   = "paddleball"
-    CostCenter  = "PE"
-    Department  = "AMO"
-    Team        = "Platform Engineering"
-    Environment = "Prod"
-    Name        = "paddleball"
+    Name = "paddleball"
   }
 }
-
 
 variable "user_data" {
   description = "User data that will be executerd when the instance is launched"
@@ -49,10 +35,8 @@ EOF
 
 variable "ingress_cidr_block" {
     description = "Ingress block to allow traffic from the load balancer"
-    default = "10.0.0.0/8"
 }
 
 variable "health_ingress_cidr_block" {
     description = "Ingress block to allow load balancer health checks to reach through"
-    default = "10.0.0.0/8"
 }

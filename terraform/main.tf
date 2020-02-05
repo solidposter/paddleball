@@ -1,9 +1,6 @@
 # Configure the AWS Provider
 provider "aws" {
   region = var.region
-/*    assume_role {
-    role_arn = "arn:aws:iam::996268458099:role/TerraformCrossAccount"
-  } */
 }
 
 data "aws_subnet_ids" "private" {

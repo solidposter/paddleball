@@ -2,3 +2,5 @@
 /.idea
 *.tgz
 .DS_Store
+.terraform
+*.tfstate*

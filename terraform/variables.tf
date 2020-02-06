@@ -33,7 +33,7 @@ variable "user_data" {
   default     = <<EOF
 #!/bin/bash
 echo "starting paddleball!"
-docker run -d --expose 2222 -p 2222:2222/udp gcr.io/public-registry-265316/kindred/paddleball -k 1984 -s 2222
+docker run --rm -d --expose 2222 -p 2222:2222/udp gcr.io/public-registry-265316/kindred/paddleball -k 1984 -s 2222
 echo "starting HTTP health endpoint"
 touch index.html
 python -m SimpleHTTPServer 2220

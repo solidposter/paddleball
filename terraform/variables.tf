@@ -5,7 +5,6 @@ variable "key_name" {
 
 variable "region" {
     type    = string
-    #default = ""
 }
 
 variable "availability_zones" {

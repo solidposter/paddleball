@@ -16,23 +16,23 @@ data "aws_subnet_ids" "private" {
 
 data "aws_ami" "latest_ecs" {
   most_recent = true
-  owners = ["591542846629"]
+  owners      = ["591542846629"]
 
   filter {
-      name   = "name"
-      values = ["*amazon-ecs-optimized"]
+    name   = "name"
+    values = ["*amazon-ecs-optimized"]
   }
 
   filter {
-      name   = "virtualization-type"
-      values = ["hvm"]
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 }
 
 resource "aws_security_group" "paddleball_sg" {
-  name         = "paddleball-sg"
-  description  = "Allow UDP inbound traffic and egress"
-  vpc_id       = var.vpc_id
+  name        = "paddleball-sg"
+  description = "Allow UDP inbound traffic and egress"
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 2222
@@ -61,11 +61,11 @@ resource "aws_security_group" "paddleball_sg" {
 }
 
 resource "aws_launch_configuration" "paddleball_lc" {
-  image_id               = data.aws_ami.latest_ecs.id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  security_groups        = [aws_security_group.paddleball_sg.id]
-  user_data              = var.user_data
+  image_id        = data.aws_ami.latest_ecs.id
+  instance_type   = var.instance_type
+  key_name        = var.key_name
+  security_groups = [aws_security_group.paddleball_sg.id]
+  user_data       = var.user_data
   lifecycle {
     create_before_destroy = true
   }
@@ -89,7 +89,7 @@ resource "aws_autoscaling_group" "paddleball_asg" {
   }
 }
 
-resource "aws_alb_target_group" "paddleball_alb_tg" {  
+resource "aws_alb_target_group" "paddleball_alb_tg" {
   name     = "paddleball-tg"
   port     = 2222
   protocol = "UDP"
@@ -103,7 +103,7 @@ resource "aws_alb_target_group" "paddleball_alb_tg" {
     port     = 2220
     protocol = "HTTP"
     path     = "/"
-    matcher = "200-399"
+    matcher  = "200-399"
   }
 }
 

@@ -22,7 +22,7 @@ data "aws_ami" "latest_ecs" {
   filter {
       name   = "virtualization-type"
       values = ["hvm"]
-  }  
+  }
 }
 
 resource "aws_security_group" "paddleball_sg" {

@@ -1,6 +1,10 @@
-# Configure the AWS Provider
 provider "aws" {
   region = var.region
+}
+
+data "aws_route53_zone" "selected" {
+  name         = var.route53_zone
+  private_zone = true
 }
 
 data "aws_subnet_ids" "private" {
@@ -12,7 +16,7 @@ data "aws_subnet_ids" "private" {
 
 data "aws_ami" "latest_ecs" {
   most_recent = true
-  owners = ["591542846629"] # AWS
+  owners = ["591542846629"]
 
   filter {
       name   = "name"
@@ -83,7 +87,6 @@ resource "aws_autoscaling_group" "paddleball_asg" {
       propagate_at_launch = true
     }
   }
-
 }
 
 resource "aws_alb_target_group" "paddleball_alb_tg" {  
@@ -120,5 +123,16 @@ resource "aws_lb_listener" "paddleball_listener" {
   default_action {
     type             = "forward"
     target_group_arn = aws_alb_target_group.paddleball_alb_tg.arn
+  }
+}
+
+resource "aws_route53_record" "paddleball_r53_record" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "paddleball.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  alias {
+    name                   = aws_lb.paddleball_lb.dns_name
+    zone_id                = aws_lb.paddleball_lb.zone_id
+    evaluate_target_health = true
   }
 }

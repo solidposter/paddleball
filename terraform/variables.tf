@@ -49,3 +49,10 @@ variable "health_ingress_cidr_block" {
     type        = string
     description = "Ingress block to allow load balancer health checks to reach through"
 }
+
+variable "route53_zone" {
+  type = string
+  description = "Hosted zone, such as example.com."
+}
+
+

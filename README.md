@@ -37,11 +37,11 @@ docker build -t paddleball .
 ```
 Start the server
 ```bash
-docker run -it --expose 2222 -p 2222:2222/udp paddleball -k 1984 -s 2222
+docker run --rm -it --expose 2222 -p 2222:2222/udp paddleball -k 1984 -s 2222
 ```
 Start the client on another host
 ```bash
-docker run -it paddleball -k 1984 x.x.x.x:2222
+docker run --rm -it paddleball -k 1984 x.x.x.x:2222
 ```
 
 ## Deploy with Helm

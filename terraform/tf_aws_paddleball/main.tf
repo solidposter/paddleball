@@ -74,7 +74,6 @@ resource "aws_launch_configuration" "paddleball_lc" {
 resource "aws_autoscaling_group" "paddleball_asg" {
   name                 = "paddleball-asg"
   launch_configuration = aws_launch_configuration.paddleball_lc.id
-  availability_zones   = var.availability_zones
   target_group_arns    = [aws_alb_target_group.paddleball_alb_tg.arn]
   vpc_zone_identifier  = data.aws_subnet_ids.private.ids
   min_size             = 1

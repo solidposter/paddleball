@@ -7,11 +7,8 @@ variable "region" {
   type = string
 }
 
-variable "availability_zones" {
-  type        = list(string)
-  description = "List of avilability zones"
-}
 variable "vpc_id" {
+  type = string
 }
 
 variable "instance_type" {

@@ -8,10 +8,9 @@ A terraform module providing a Paddleball installation in AWS.
 module "paddleball" {
   source = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball?ref=terraform"
 
-  key_name                  = "CloudFormation-eu-central-1"
+  key_name                  = "MyKey"
   region                    = "eu-central-1"
-  availability_zones        = ["eu-central-1a"]
-  vpc_id                    = "vpc-d998f8b1"
+  vpc_id                    = "vpc-1111111"
   ingress_cidr_block        = "10.0.0.0/8"
   health_ingress_cidr_block = "10.0.0.0/8"
   instance_tags = {
@@ -22,7 +21,7 @@ module "paddleball" {
     Environment = "Prod"
     Name        = "paddleball"
   }
-  route53_zone = "amo-pe.aws.kindredgroup.com."
+  route53_zone = "aws.company.com."
 }
 ```
 

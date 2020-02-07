@@ -5,12 +5,17 @@ A terraform module providing a Paddleball installation in AWS.
 ## Usage
 
 ```hcl
-module "paddleball" {
-  source = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball"
-  version = "1.2"
+provider "aws" {
+  region = "eu-central-1"
+}
 
-  key_name                  = "MyKey"
-  region                    = "eu-central-1"
+data "aws_region" "current" {}
+
+module "paddleball" {
+  #source  = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball"
+  source   = "./terraform/tf_aws_paddleball"
+
+  region                    = data.aws_region.current.name
   vpc_id                    = "vpc-1111111"
   ingress_cidr_block        = "10.0.0.0/8"
   health_ingress_cidr_block = "10.0.0.0/8"

@@ -1,8 +1,3 @@
-variable "key_name" {
-  type        = string
-  description = "Access key"
-}
-
 variable "region" {
   type = string
 }

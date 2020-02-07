@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 data "aws_route53_zone" "selected" {
   name         = var.route53_zone
   private_zone = true
@@ -63,7 +59,6 @@ resource "aws_security_group" "paddleball_sg" {
 resource "aws_launch_configuration" "paddleball_lc" {
   image_id        = data.aws_ami.latest_ecs.id
   instance_type   = var.instance_type
-  key_name        = var.key_name
   security_groups = [aws_security_group.paddleball_sg.id]
   user_data       = var.user_data
   lifecycle {

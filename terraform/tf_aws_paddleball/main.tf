@@ -57,6 +57,7 @@ resource "aws_security_group" "paddleball_sg" {
 }
 
 resource "aws_launch_configuration" "paddleball_lc" {
+  name            = "paddleball-lc"
   image_id        = data.aws_ami.latest_ecs.id
   instance_type   = var.instance_type
   security_groups = [aws_security_group.paddleball_sg.id]

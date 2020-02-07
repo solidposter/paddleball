@@ -12,8 +12,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 module "paddleball" {
-  #source  = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball"
-  source   = "./terraform/tf_aws_paddleball"
+  source  = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball"
 
   region                    = data.aws_region.current.name
   vpc_id                    = "vpc-1111111"

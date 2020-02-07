@@ -127,7 +127,7 @@ resource "aws_lb_listener" "paddleball_listener" {
 
 resource "aws_route53_record" "paddleball_r53_record" {
   zone_id = data.aws_route53_zone.selected.zone_id
-  name    = "paddleball.${data.aws_route53_zone.selected.name}"
+  name    = "paddleball.${var.vpc_id}.${var.region}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   alias {
     name                   = aws_lb.paddleball_lb.dns_name

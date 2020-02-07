@@ -7,6 +7,7 @@ A terraform module providing a Paddleball installation in AWS.
 ```hcl
 module "paddleball" {
   source = "github.com/kindredgroup/paddleball.git//terraform/tf_aws_paddleball"
+  version = "1.2"
 
   key_name                  = "MyKey"
   region                    = "eu-central-1"

@@ -198,7 +198,7 @@ func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
 
 	} else {
 		output := jsonReport{}
-		output.Tag = printJson
+		output.Tag = getEnv("PADDLEBALL_TAG", "undef")
 		output.TimestampUtc = time.Now().UTC()
 		output.DroppedPackets = stats.dropPkts
 		output.DuplicatePackets = stats.dupPkts

@@ -18,10 +18,10 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"time"
 )
 

@@ -50,11 +50,10 @@ func statsEngine(rp <-chan payload, global *packetStats, printJson string) {
 	feedWindow := []payload{}              // insert packets
 
 	ticker := time.NewTicker(time.Second)
-	message := payload{}
 
 	for {
 		select {
-		case message = <-rp:
+		case message := <-rp:
 			feedWindow = append(feedWindow, message)
 		case <-ticker.C:
 			local := process(workWindow, feedWindow, serialNumbers)
@@ -145,7 +144,7 @@ func fastForward(serialNumbers map[int64]int64, workWindow []payload) int64 {
 	// Compare expected serial numbers with the lowest number found.
 	// If there are packets missing increment drop counter and update
 	// the expected serial number.
-	for id, _ := range lowest {
+	for id := range lowest {
 		_, ok := serialNumbers[id]
 		if ok && (serialNumbers[id] < lowest[id]) {
 			dropPkts = dropPkts + (lowest[id] - serialNumbers[id])

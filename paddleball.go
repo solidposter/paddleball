@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,8 +31,6 @@ var ( // Populated at build time.
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	modePtr := flag.Bool("s", false, "set server mode")
 	keyPtr := flag.Int("k", 0, "server key")
 	clntPtr := flag.Int("n", 1, "number of clients to run")
@@ -103,7 +100,7 @@ func main() {
 }
 
 func trapper(global *packetStats) {
-	cs := make(chan os.Signal)
+	cs := make(chan os.Signal, 2)
 	signal.Notify(cs, os.Interrupt, syscall.SIGTERM)
 	<-cs
 

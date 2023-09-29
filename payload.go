@@ -18,7 +18,7 @@ package main
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -48,7 +48,7 @@ func newPayload(id int, key int, size int) payload {
 func decode(buffer []byte, length int) payload {
 	m := payload{}
 
-	dec := gob.NewDecoder(bytes.NewBuffer(buffer[:length]))
+	dec := json.NewDecoder(bytes.NewBuffer(buffer[:length]))
 	err := dec.Decode(&m)
 	if err != nil {
 		fmt.Println("decode error:", err) // do I care ?
@@ -59,7 +59,7 @@ func decode(buffer []byte, length int) payload {
 func (m payload) encode() *bytes.Buffer {
 	var buffer bytes.Buffer
 
-	enc := gob.NewEncoder(&buffer)
+	enc := json.NewEncoder(&buffer)
 	err := enc.Encode(m)
 	if err != nil {
 		log.Fatal("encode failed:", err)

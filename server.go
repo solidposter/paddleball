@@ -18,28 +18,18 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
-	"math/rand"
 	"net"
 )
 
-func server(port string, key int) {
+func server(port string, key int64) {
 	var ebuf *bytes.Buffer
 	nbuf := make([]byte, 65536)
 
-	serverkey := int64(key)
-	if serverkey == 0 {
-		serverkey = rand.Int63()
-	}
-
-	fmt.Print("Starting server mode, ")
 	pc, err := net.ListenPacket("udp", "0.0.0.0:"+port)
 	if err != nil {
 		log.Fatal("server:", err)
 	}
-	fmt.Println("listening on", pc.LocalAddr(), "with server key", serverkey)
-
 	for {
 		length, addr, err := pc.ReadFrom(nbuf)
 		if err != nil {
@@ -47,7 +37,7 @@ func server(port string, key int) {
 		}
 
 		message := decode(nbuf, length)
-		if message.Key != serverkey {
+		if message.Key != key {
 			continue
 		}
 

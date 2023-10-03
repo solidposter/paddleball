@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
 	"strconv"
@@ -47,13 +48,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	// start in server mode, flag.Args()[0] is port to listen on.
+	// start in server mode
 	if *modePtr {
 		if len(flag.Args()) != 1 {
 			fmt.Println("Please specify server base port as the final option")
 			os.Exit(1)
 		}
-
 		port := flag.Args()[0]
 		iport, err := strconv.Atoi(port)
 		if err != nil {
@@ -64,8 +64,12 @@ func main() {
 			fmt.Println("Invalid port", port)
 			os.Exit(1)
 		}
-
-		server(port, *keyPtr)
+		serverkey := int64(*keyPtr)
+		if serverkey == 0 {
+			serverkey = rand.Int63()
+		}
+		fmt.Printf("Starting in server mode on port %v with key %v\n", port, serverkey)
+		server(port, serverkey)
 	}
 
 	// Global information and statistics

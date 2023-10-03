@@ -124,7 +124,12 @@ func main() {
 	targetIP := ip.IP.String()
 
 	// start the clients, staged over a second
-	targetPort := rand.Intn(hport-lport) + lport
+	// when server runs on a single port, lport = hport
+	targetPort := hport
+	if hport != lport {
+		targetPort = rand.Intn(hport-lport) + lport
+	}
+
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
 		c := newclient(i)

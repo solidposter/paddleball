@@ -66,11 +66,3 @@ func (m payload) encode() *bytes.Buffer {
 	}
 	return &buffer
 }
-
-func (m *payload) Increment() {
-	m.Serial++
-}
-
-func (m *payload) SetServerTs() {
-	m.Sts = time.Now()
-}

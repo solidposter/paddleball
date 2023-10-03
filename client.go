@@ -74,6 +74,6 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 		if err != nil {
 			log.Print("sender: ", err)
 		}
-		message.Increment()
+		message.Serial++
 	}
 }

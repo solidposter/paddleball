@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"log"
 	"net"
+	"time"
 )
 
 func server(port string, key int64) {
@@ -35,13 +36,11 @@ func server(port string, key int64) {
 		if err != nil {
 			continue
 		}
-
 		message := decode(nbuf, length)
 		if message.Key != key {
 			continue
 		}
-
-		message.SetServerTs()
+		message.Sts = time.Now()
 		ebuf = message.encode()
 		pc.WriteTo(ebuf.Bytes(), addr)
 	}

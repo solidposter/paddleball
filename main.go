@@ -69,9 +69,14 @@ func main() {
 			serverkey = rand.Int63()
 		}
 		hport := lport + *clntPtr - 1
+		fmt.Printf("Starting in server mode on port %v", lport)
 		for i := lport; i <= hport; i++ {
-			fmt.Printf("Starting in server mode on port %v with key %v\n", i, serverkey)
 			go server(strconv.Itoa(i), serverkey, lport, hport)
+		}
+		if lport == hport {
+			fmt.Printf(" with key %v\n", serverkey)
+		} else {
+			fmt.Printf("-%v with key %v\n", hport, serverkey)
 		}
 		<-(chan int)(nil) // wait forever
 	}

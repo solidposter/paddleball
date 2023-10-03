@@ -35,7 +35,7 @@ var ( // Populated at build time.
 func main() {
 	modePtr := flag.Bool("s", false, "set server mode")
 	keyPtr := flag.Int("k", 0, "server key")
-	clntPtr := flag.Int("n", 1, "number of clients to run")
+	clntPtr := flag.Int("n", 1, "number of clients/servers to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
 	jsonPtr := flag.String("j", "text", "print in JSON format with (not the word text)")
@@ -55,12 +55,12 @@ func main() {
 			os.Exit(1)
 		}
 		port := flag.Args()[0]
-		iport, err := strconv.Atoi(port)
+		lport, err := strconv.Atoi(port)
 		if err != nil {
 			fmt.Println("Invalid port", port)
 			os.Exit(1)
 		}
-		if iport < 1 || iport > 65535 {
+		if lport < 1 || lport > 65535 {
 			fmt.Println("Invalid port", port)
 			os.Exit(1)
 		}
@@ -68,8 +68,12 @@ func main() {
 		if serverkey == 0 {
 			serverkey = rand.Int63()
 		}
-		fmt.Printf("Starting in server mode on port %v with key %v\n", port, serverkey)
-		server(port, serverkey)
+		hport := lport + *clntPtr - 1
+		for i := lport; i <= hport; i++ {
+			fmt.Printf("Starting in server mode on port %v with key %v\n", i, serverkey)
+			go server(strconv.Itoa(i), serverkey, lport, hport)
+		}
+		<-(chan int)(nil) // wait forever
 	}
 
 	// Global information and statistics

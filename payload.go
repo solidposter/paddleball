@@ -29,6 +29,8 @@ type payload struct {
 	Id     int64     // client ID
 	Key    int64     // server key
 	Serial int64     // packet serial number
+	Lport  int       // Server base port
+	Hport  int       // Server highest port
 	Cts    time.Time // client timestamp
 	Sts    time.Time // server timestamp
 	Rts    time.Time // receiver timestamp

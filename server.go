@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-func server(port string, key int64) {
+func server(port string, key int64, lport int, hport int) {
 	var ebuf *bytes.Buffer
 	nbuf := make([]byte, 65536)
 
@@ -41,6 +41,8 @@ func server(port string, key int64) {
 			continue
 		}
 		message.Sts = time.Now()
+		message.Lport = lport
+		message.Hport = hport
 		ebuf = message.encode()
 		pc.WriteTo(ebuf.Bytes(), addr)
 	}

@@ -18,32 +18,51 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net"
 	"time"
 )
 
 func server(port string, key int64, lport int, hport int) {
-	var ebuf *bytes.Buffer
+	req := payload{}
 	nbuf := make([]byte, 65536)
 
-	pc, err := net.ListenPacket("udp", "0.0.0.0:"+port)
+	conn, err := net.ListenPacket("udp", "0.0.0.0:"+port)
 	if err != nil {
 		log.Fatal("server:", err)
 	}
 	for {
-		length, addr, err := pc.ReadFrom(nbuf)
+		length, addr, err := conn.ReadFrom(nbuf)
 		if err != nil {
+			log.Print(err)
 			continue
 		}
-		message := decode(nbuf, length)
-		if message.Key != key {
+
+		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
+		err = dec.Decode(&req)
+		if err != nil {
+			log.Print(err, addr)
 			continue
 		}
-		message.Sts = time.Now()
-		message.Lport = lport
-		message.Hport = hport
-		ebuf = message.encode()
-		pc.WriteTo(ebuf.Bytes(), addr)
+		if req.Key != key {
+			continue
+		}
+
+		req.Sts = time.Now()
+		req.Lport = lport
+		req.Hport = hport
+		buffer := new(bytes.Buffer)
+		enc := json.NewEncoder(buffer)
+		err = enc.Encode(req)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		_, err = conn.WriteTo(buffer.Bytes(), addr)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
 	}
 }

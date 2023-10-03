@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net"
 	"time"
@@ -33,26 +34,33 @@ func client(rp chan<- payload, id int, addr string, key int, rate int, size int)
 }
 
 func receiver(rp chan<- payload, conn net.Conn, key int) {
-	buf := make([]byte, 65536)
-	message := payload{}
+	nbuf := make([]byte, 65536)
+	resp := payload{}
 	pbdrop := 0 // drop counter
 
 	for {
-		length, err := conn.Read(buf)
+		length, err := conn.Read(nbuf)
 		if err != nil {
+			log.Print(err)
+			continue
+		}
+		rts := time.Now() // receive timestamp
+
+		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
+		err = dec.Decode(&resp)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		if resp.Key != int64(key) {
+			log.Print("Invalid key", conn.RemoteAddr().String())
 			continue
 		}
 
-		rts := time.Now()
-		message = decode(buf, length)
-		if message.Key != int64(key) {
-			continue
-		}
-
-		message.Rts = rts
-		message.Pbdrop = int64(pbdrop) // copy the drop counter to the packet
+		resp.Rts = rts
+		resp.Pbdrop = int64(pbdrop) // copy the drop counter to the packet
 		select {
-		case rp <- message: // put the packet in the channel
+		case rp <- resp: // put the packet in the channel
 			pbdrop = 0 // reset the drop counter
 
 		default: // channel full, discard packet, increment drop counter
@@ -62,18 +70,21 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 }
 
 func sender(id int, conn net.Conn, key int, rate int, size int) {
-	var buf *bytes.Buffer
-
-	message := newPayload(id, key, size)
-
+	req := newPayload(id, key, size)
 	ticker := time.NewTicker(time.Duration(1000000000/rate) * time.Nanosecond)
 	for {
-		message.Cts = <-ticker.C
-		buf = message.encode()
-		_, err := conn.Write(buf.Bytes())
+		req.Cts = <-ticker.C
+		buffer := new(bytes.Buffer)
+		enc := json.NewEncoder(buffer)
+		err := enc.Encode(req)
 		if err != nil {
-			log.Print("sender: ", err)
+			log.Panic(err)
 		}
-		message.Serial++
+
+		_, err = conn.Write(buffer.Bytes())
+		if err != nil {
+			log.Print(err)
+		}
+		req.Serial++
 	}
 }

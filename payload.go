@@ -17,11 +17,7 @@ package main
 //
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/json"
-	"fmt"
-	"log"
 	"time"
 )
 
@@ -45,26 +41,4 @@ func newPayload(id int, key int, size int) payload {
 	m.Data = make([]byte, size)
 	rand.Read(m.Data)
 	return m
-}
-
-func decode(buffer []byte, length int) payload {
-	m := payload{}
-
-	dec := json.NewDecoder(bytes.NewBuffer(buffer[:length]))
-	err := dec.Decode(&m)
-	if err != nil {
-		fmt.Println("decode error:", err) // do I care ?
-	}
-	return m
-}
-
-func (m payload) encode() *bytes.Buffer {
-	var buffer bytes.Buffer
-
-	enc := json.NewEncoder(&buffer)
-	err := enc.Encode(m)
-	if err != nil {
-		log.Fatal("encode failed:", err)
-	}
-	return &buffer
 }

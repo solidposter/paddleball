@@ -19,7 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -112,11 +114,26 @@ func main() {
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
 	go statsEngine(rp, &global, *jsonPtr)
-	time.Sleep(20 * time.Millisecond) // give the statsengine time to init
+
+	p := newclient(65535)
+	lport, hport := p.probe(flag.Args()[0], *keyPtr)
+	ip, err := net.ResolveUDPAddr("udp", flag.Args()[0])
+	if err != nil {
+		log.Panic(err)
+	}
+	targetIP := ip.IP.String()
+
 	// start the clients, staged over a second
+	targetPort := rand.Intn(hport-lport) + lport
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
-		go client(rp, i, flag.Args()[0], *keyPtr, *ratePtr, *bytePtr)
+		c := newclient(i)
+		go c.start(rp, targetIP, strconv.Itoa(targetPort), *keyPtr, *ratePtr, *bytePtr)
+		if targetPort == hport {
+			targetPort = lport
+		} else {
+			targetPort++
+		}
 		<-ticker.C
 	}
 	<-(chan int)(nil) // wait forever

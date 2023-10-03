@@ -19,18 +19,76 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"time"
 )
 
-func client(rp chan<- payload, id int, addr string, key int, rate int, size int) {
+type client struct {
+	id int
+}
+
+func newclient(id int) *client {
+	return &client{
+		id: id,
+	}
+}
+
+func (c *client) probe(addr string, key int) (lport, hport int) {
+	req := newPayload(c.id, key, 100)
+	nbuf := make([]byte, 1500)
+
 	conn, err := net.Dial("udp", addr)
 	if err != nil {
-		log.Fatal("client:", err)
+		log.Fatal(err)
+	}
+	buffer := new(bytes.Buffer)
+	enc := json.NewEncoder(buffer)
+	err = enc.Encode(req)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	success := false // set to true on valid response
+	for {
+		_, err = conn.Write(buffer.Bytes())
+		if err != nil {
+			log.Fatal(err)
+		}
+		conn.SetReadDeadline((time.Now().Add(1000 * time.Millisecond)))
+		for {
+			length, err := conn.Read(nbuf)
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+				fmt.Print(".")
+				break
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+			dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
+			err = dec.Decode(&req)
+			if err != nil {
+				log.Print(err, addr)
+				continue
+			}
+			success = true
+			break
+		}
+		if success {
+			break
+		}
+	}
+	return req.Lport, req.Hport
+}
+
+func (c *client) start(rp chan<- payload, targetIP string, targetPort string, key int, rate int, size int) {
+	conn, err := net.Dial("udp", targetIP+":"+targetPort)
+	if err != nil {
+		log.Fatal(err)
 	}
 	go receiver(rp, conn, key)
-	sender(id, conn, key, rate, size)
+	sender(c.id, conn, key, rate, size)
 }
 
 func receiver(rp chan<- payload, conn net.Conn, key int) {

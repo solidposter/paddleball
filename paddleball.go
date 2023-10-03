@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -48,14 +49,23 @@ func main() {
 
 	// start in server mode, flag.Args()[0] is port to listen on.
 	if *modePtr {
-		if len(flag.Args()) == 0 {
-			server("0", *keyPtr)
-		} else if len(flag.Args()) == 1 {
-			server(flag.Args()[0], *keyPtr)
-		} else {
-			fmt.Println("Error, only the server port should follow the options.", flag.Args())
+		if len(flag.Args()) != 1 {
+			fmt.Println("Please specify server base port as the final option")
 			os.Exit(1)
 		}
+
+		port := flag.Args()[0]
+		iport, err := strconv.Atoi(port)
+		if err != nil {
+			fmt.Println("Invalid port", port)
+			os.Exit(1)
+		}
+		if iport < 1 || iport > 65535 {
+			fmt.Println("Invalid port", port)
+			os.Exit(1)
+		}
+
+		server(port, *keyPtr)
 	}
 
 	// Global information and statistics

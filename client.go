@@ -43,6 +43,8 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer conn.Close()
+
 	buffer := new(bytes.Buffer)
 	enc := json.NewEncoder(buffer)
 	err = enc.Encode(req)

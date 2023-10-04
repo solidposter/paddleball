@@ -83,15 +83,9 @@ func main() {
 		<-(chan int)(nil) // wait forever
 	}
 
-	// Global information and statistics
-	global := packetStats{}
-
-	// catch CTRL+C
-	go trapper(&global)
-
 	// client mode
-	if len(flag.Args()) == 0 {
-		fmt.Println("Specify server:port")
+	if len(flag.Args()) != 1 {
+		fmt.Println("Final and only argument must be IP:port")
 		os.Exit(1)
 	}
 	if *keyPtr == 0 {
@@ -102,14 +96,11 @@ func main() {
 		fmt.Println("client rate below 1 pps not supported")
 		os.Exit(1)
 	}
-	if len(flag.Args()) == 1 {
-		if *jsonPtr == "text" {
-			fmt.Println("server address:", flag.Args()[0])
-		}
-	} else {
-		fmt.Println("Error, only server IP:port follow the options.", flag.Args())
-		os.Exit(1)
-	}
+
+	// Global information and statistics
+	global := packetStats{}
+	// catch CTRL+C
+	go trapper(&global)
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second

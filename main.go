@@ -114,22 +114,23 @@ func main() {
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
 	go statsEngine(rp, &global, *jsonPtr)
-
+	// Send a probe to get server configuration
 	p := newclient(65535)
 	lport, hport := p.probe(flag.Args()[0], *keyPtr)
+
+	// Extract IP address from the IP:port string
 	ip, err := net.ResolveUDPAddr("udp", flag.Args()[0])
 	if err != nil {
 		log.Panic(err)
 	}
 	targetIP := ip.IP.String()
-
-	// start the clients, staged over a second
-	// when server runs on a single port, lport = hport
+	// Set random port in the range, unless lport=hport (single port)
 	targetPort := hport
 	if hport != lport {
 		targetPort = rand.Intn(hport-lport) + lport
 	}
 
+	// start the clients, staged over a second, iterating over server ports
 	ticker := time.NewTicker(time.Duration(1000000/(*clntPtr)) * time.Microsecond)
 	for i := 0; i < *clntPtr; i++ {
 		c := newclient(i)

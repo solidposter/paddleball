@@ -74,6 +74,10 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 				log.Print(err, addr)
 				continue
 			}
+			if req.Key != int64(key) {
+				log.Printf("Invalid key %v from %v\n", req.Key, conn.RemoteAddr().String())
+				continue
+			}
 			success = true
 			break
 		}
@@ -113,7 +117,7 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 			continue
 		}
 		if resp.Key != int64(key) {
-			log.Print("Invalid key", conn.RemoteAddr().String())
+			log.Printf("Invalid key %v from %v\n", resp.Key, conn.RemoteAddr().String())
 			continue
 		}
 

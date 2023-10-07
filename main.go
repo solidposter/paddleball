@@ -106,8 +106,14 @@ func main() {
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
 	go statsEngine(rp, &global, *jsonPtr)
 	// Send a probe to get server configuration
+	if *jsonPtr == "text" {
+		fmt.Printf("Starting probe of %v", flag.Args()[0])
+	}
 	p := newclient(65535)
 	lport, hport := p.probe(flag.Args()[0], *keyPtr)
+	if *jsonPtr == "text" {
+		fmt.Printf(" ports %v-%v active\n", lport, hport)
+	}
 
 	// Extract IP address from the IP:port string
 	ip, err := net.ResolveUDPAddr("udp", flag.Args()[0])

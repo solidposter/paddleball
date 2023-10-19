@@ -17,34 +17,11 @@ package main
 //
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
+	"log/slog"
 	"time"
 )
 
-type packetStats struct {
-	dropPkts, dupPkts, reordPkts, rcvdPkts int64
-	pbdropPkts                             int64
-	minRtt, maxRtt, totRtt                 time.Duration
-}
-
-type jsonReport struct {
-	Tag                   string
-	TimestampUtc          time.Time
-	ReceivedPackets       int64
-	DroppedPackets        int64
-	DuplicatePackets      int64
-	ReorderedPackets      int64
-	AverageRTT            float64
-	LowestRTT             float64
-	HighestRTT            float64
-	PBQueueDroppedPackets int
-	PBQueueLength         int
-	PBQueueCapacity       int
-}
-
-func statsEngine(rp <-chan payload, global *packetStats, printJson string) {
+func statsEngine(rp <-chan payload, global *packetStats, printJson bool, tag string) {
 	serialNumbers := make(map[int64]int64) // the expected serial number for each id
 	workWindow := []payload{}              // packets to analyze
 	feedWindow := []payload{}              // insert packets
@@ -62,7 +39,7 @@ func statsEngine(rp <-chan payload, global *packetStats, printJson string) {
 			workWindow = feedWindow  // change feed to work
 			feedWindow = []payload{} // re-init feed
 
-			statsPrint(&local, printJson, len(rp), cap(rp))
+			statsPrint(&local, printJson, len(rp), cap(rp), tag)
 		}
 	}
 }
@@ -174,52 +151,16 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(stats *packetStats, printJson string, qlen int, qcap int) {
+func statsPrint(stats *packetStats, printJson bool, qlen int, qcap int, tag string) {
 	if stats.rcvdPkts == 0 {
 		return
 	}
+	rep := stats.Report()
+	rep.Tag = tag
+	rep.PBQueueLength = qlen
+	rep.PBQueueCapacity = qcap
 
-	if printJson == "text" {
-		fmt.Print("received: ", stats.rcvdPkts)
-		fmt.Print(" dropped: ", stats.dropPkts)
-		fmt.Printf("(%.2f%%) ", float64(stats.dropPkts)/float64(stats.rcvdPkts+stats.dropPkts)*100)
-		fmt.Print("re-ordered: ", stats.reordPkts)
-		fmt.Printf("(%.2f%%) ", float64(stats.reordPkts)/float64(stats.rcvdPkts+stats.dropPkts)*100)
-		fmt.Print("duplicates: ", stats.dupPkts)
-
-		avgRtt := stats.totRtt / time.Duration(stats.rcvdPkts)
-		fastest := stats.minRtt - avgRtt // time below avg rtt
-		slowest := stats.maxRtt - avgRtt // time above avg rtt
-		fmt.Print(" avg rtt: ", avgRtt, " fastest: ", fastest, " slowest: +", slowest)
-		fmt.Print(" queue: ", qlen, "/", qcap)
-		fmt.Print(" qdrops: ", stats.pbdropPkts)
-		fmt.Println()
-
-	} else {
-		output := jsonReport{}
-		output.Tag = printJson
-		output.TimestampUtc = time.Now().UTC()
-		output.DroppedPackets = stats.dropPkts
-		output.DuplicatePackets = stats.dupPkts
-		output.ReorderedPackets = stats.reordPkts
-		output.ReceivedPackets = stats.rcvdPkts
-		// RTT in ms
-		output.AverageRTT = float64(stats.totRtt/time.Duration(stats.rcvdPkts)) / 1000000
-		output.LowestRTT = float64(stats.minRtt) / 1000000
-		output.HighestRTT = float64(stats.maxRtt) / 1000000
-
-		output.PBQueueLength = qlen
-		output.PBQueueCapacity = qcap
-		output.PBQueueDroppedPackets = int(stats.pbdropPkts)
-
-		b, err := json.Marshal(output)
-		if err != nil {
-			fmt.Println("statsPrint error:", err)
-		} else {
-			os.Stdout.Write(b)
-			fmt.Println()
-		}
-	}
+	slog.Info("stats", "report", rep)
 }
 
 func statsUpdate(global *packetStats, local packetStats) {

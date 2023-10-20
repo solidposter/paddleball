@@ -19,7 +19,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net"
 	"time"
 )
@@ -30,19 +30,19 @@ func server(port string, key int64, lport int, hport int) {
 
 	conn, err := net.ListenPacket("udp", "0.0.0.0:"+port)
 	if err != nil {
-		log.Fatal("server:", err)
+		fatal("server:" + err.Error())
 	}
 	for {
 		length, addr, err := conn.ReadFrom(nbuf)
 		if err != nil {
-			log.Print(err)
+			slog.Error(err.Error())
 			continue
 		}
 
 		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
 		err = dec.Decode(&req)
 		if err != nil {
-			log.Print(err, addr)
+			slog.Error("error", "message", err, "addr", addr)
 			continue
 		}
 		if req.Key != key {
@@ -56,12 +56,12 @@ func server(port string, key int64, lport int, hport int) {
 		enc := json.NewEncoder(buffer)
 		err = enc.Encode(req)
 		if err != nil {
-			log.Panic(err)
+			fatal(err.Error())
 		}
 
 		_, err = conn.WriteTo(buffer.Bytes(), addr)
 		if err != nil {
-			log.Print(err)
+			slog.Error(err.Error())
 			continue
 		}
 	}

@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand"
 	"net"
 	"os"
@@ -40,7 +40,8 @@ func main() {
 	clntPtr := flag.Int("n", 1, "number of clients/servers to run")
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
-	jsonPtr := flag.String("j", "text", "print in JSON format with (not the word text)")
+	jsonPtr := flag.Bool("j", false, "print in JSON format")
+	tagPtr := flag.String("t", "pickleball", "tag to use in logging")
 	versPtr := flag.Bool("v", false, "print version info")
 	flag.Parse()
 
@@ -50,51 +51,54 @@ func main() {
 		os.Exit(0)
 	}
 
+	// structured logger
+	var logger *slog.Logger
+	if *jsonPtr {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	} else {
+		logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	}
+	slog.SetDefault(logger)
+
 	// start in server mode
 	if *modePtr {
 		if len(flag.Args()) != 1 {
-			fmt.Println("Please specify server base port as the final option")
-			os.Exit(1)
+			fatal("Please specify server base port as the final option")
 		}
 		port := flag.Args()[0]
 		lport, err := strconv.Atoi(port)
 		if err != nil {
-			fmt.Println("Invalid port", port)
-			os.Exit(1)
+			fatal("Invalid port: " + port)
 		}
 		if lport < 1 || lport > 65535 {
-			fmt.Println("Invalid port", port)
-			os.Exit(1)
+			fatal("Invalid port: " + port)
 		}
 		serverkey := int64(*keyPtr)
 		if serverkey == 0 {
 			serverkey = rand.Int63()
 		}
 		hport := lport + *clntPtr - 1
-		fmt.Printf("Starting in server mode on port %v", lport)
 		for i := lport; i <= hport; i++ {
 			go server(strconv.Itoa(i), serverkey, lport, hport)
 		}
 		if lport == hport {
-			fmt.Printf(" with key %v\n", serverkey)
+			slog.Info("Starting in server mode", "key", serverkey, "lport", lport)
 		} else {
-			fmt.Printf("-%v with key %v\n", hport, serverkey)
+			slog.Info("Starting in server mode", "key", serverkey, "lport", lport, "hport", hport)
+
 		}
 		<-(chan int)(nil) // wait forever
 	}
 
 	// client mode
 	if len(flag.Args()) != 1 {
-		fmt.Println("Final and only argument must be IP:port")
-		os.Exit(1)
+		fatal("Final and only argument must be IP:port")
 	}
 	if *keyPtr == 0 {
-		fmt.Println("Specify server key")
-		os.Exit(1)
+		fatal("Specify server key")
 	}
 	if *ratePtr < 1 {
-		fmt.Println("client rate below 1 pps not supported")
-		os.Exit(1)
+		fatal("client rate below 1 pps not supported")
 	}
 
 	// Global information and statistics
@@ -104,21 +108,21 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
-	go statsEngine(rp, &global, *jsonPtr)
+	go statsEngine(rp, &global, *jsonPtr, *tagPtr)
 	// Send a probe to get server configuration
-	if *jsonPtr == "text" {
-		fmt.Printf("Starting probe of %v", flag.Args()[0])
+	if *jsonPtr {
+		slog.Info("Starting probe of", "target", flag.Args()[0])
 	}
 	p := newclient(65535)
 	lport, hport := p.probe(flag.Args()[0], *keyPtr)
-	if *jsonPtr == "text" {
-		fmt.Printf(" ports %v-%v active\n", lport, hport)
+	if *jsonPtr {
+		slog.Info("Ports active", "from", lport, "to", hport)
 	}
 
 	// Extract IP address from the IP:port string
 	ip, err := net.ResolveUDPAddr("udp", flag.Args()[0])
 	if err != nil {
-		log.Panic(err)
+		fatal(err.Error())
 	}
 	targetIP := ip.IP.String()
 	// Set random port in the range, unless lport=hport (single port)
@@ -148,7 +152,12 @@ func trapper(global *packetStats) {
 	<-cs
 
 	fmt.Println()
-	statsPrint(global, "text", 0, 0) // no need for JSON here
+	statsPrint(global, false, 0, 0, "pickleball") // no need for JSON here
 	fmt.Println()
 	os.Exit(0)
+}
+
+func fatal(s string) {
+	slog.Error(s)
+	os.Exit(1)
 }

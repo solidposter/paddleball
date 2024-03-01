@@ -18,10 +18,11 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"log/slog"
 	"net"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 func server(port string, key int64, lport int, hport int) {

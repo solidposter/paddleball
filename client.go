@@ -18,11 +18,12 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 type client struct {

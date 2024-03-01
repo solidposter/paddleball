@@ -29,10 +29,7 @@ import (
 	"time"
 )
 
-var ( // Populated at build time.
-	version string
-	date    string
-)
+var version string // Populated at build time
 
 func main() {
 	modePtr := flag.Bool("s", false, "set server mode")
@@ -47,7 +44,6 @@ func main() {
 
 	if *versPtr {
 		fmt.Println("Version:", version)
-		fmt.Println("Date:", date)
 		os.Exit(0)
 	}
 

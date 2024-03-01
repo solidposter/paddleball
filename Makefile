@@ -1,12 +1,11 @@
 
 VERSION := $(shell git describe --always --long --dirty)
-DATE := $(shell date)
 
 build:
-	go build -ldflags "-s -w -X 'main.version=${VERSION}' -X 'main.date=${DATE}'"
+	go build -ldflags "-s -w -X 'main.version=${VERSION}'"
 
 install:
-	go install -ldflags "-s -w -X 'main.version=${VERSION}' -X 'main.date=${DATE}'"
+	go install -ldflags "-s -w -X 'main.version=${VERSION}'"
 
 
 

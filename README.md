@@ -37,7 +37,7 @@ Paddleball scales across multiple cores with the -n option
 Example server using 4 ports to load over 4 cores:
 paddleball -s -k 1984 -n 4 10000
 
-Example client hitting it with 400 25pps clients (10kpps)
+Example client hitting it with 400 25pps clients (10kpps):
 paddleball -k 1984 -r 25 -n 400 192.168.100:10000
 
 

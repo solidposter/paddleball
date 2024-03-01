@@ -1,32 +1,43 @@
+# Paddleball
 Multi-session, fixed rate, network quality monitor.
 
 Paddleball measures the network quality by sending streams of packets to a server
 that bounces the packets back, analyzing the round-trip time and packet loss.
 
-Starting the server with key 1984 and listing on port 2222:
+## Usage
 
-paddleball -k 1984 -s 2222
+```
+./paddleball -h                      
+Usage of ./paddleball:
+  -V	print version info
+  -b int
+    	payload size (default 384)
+  -j	print in JSON format
+  -k int
+    	server key
+  -n int
+    	number of clients/servers to run (default 1)
+  -r int
+    	client pps rate (default 10)
+  -s	set server mode
+  -t string
+    	tag to use in logging
+```
 
-Note that the server port is the final option. If server mode (-s) is specified without key or port,
-key and port will be randomly chosen.
+## Basic use
+Example server running on port 10000 (single port):
+paddleball -s -k 1984 10000
 
-Server options
-	-k <int>	server key
-	-s		server mode
+Example client using above server:
+paddleball -k 1984 192.168.1.100:10000
 
+## High performanc test
+Paddleball scales across multiple cores with the -n option
 
+Example server using 4 ports to load over 4 cores:
+paddleball -s -k 1984 -n 4 10000
 
-Starting a client:
+Example client hitting it with 400 25pps clients (10kpps)
+paddleball -k 1984 -r 25 -n 400 192.168.100:10000
 
-paddleball -k 1984 x.x.x.x:2222
-
-Note that the ip:port is the final option.
-
-
-Client options:
-	-b <int>	payload size in bytes (not packet size, tcpdump is your friend)
-	-j <string>	JSON output, for our logging system
-	-k <int>	server key
-	-n <int>	number of streams, default = 1
-	-r <int>	pps rate per stream, default = 10
 

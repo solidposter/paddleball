@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func statsEngine(rp <-chan payload, global *packetStats, printJson bool, tag string) {
+func statsEngine(rp <-chan payload, global *packetStats, tag string) {
 	serialNumbers := make(map[int64]int64) // the expected serial number for each id
 	workWindow := []payload{}              // packets to analyze
 	feedWindow := []payload{}              // insert packets
@@ -39,7 +39,7 @@ func statsEngine(rp <-chan payload, global *packetStats, printJson bool, tag str
 			workWindow = feedWindow  // change feed to work
 			feedWindow = []payload{} // re-init feed
 
-			statsPrint(&local, printJson, len(rp), cap(rp), tag)
+			statsPrint(&local, len(rp), cap(rp), tag)
 		}
 	}
 }
@@ -151,7 +151,7 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(stats *packetStats, printJson bool, qlen int, qcap int, tag string) {
+func statsPrint(stats *packetStats, qlen int, qcap int, tag string) {
 	if stats.rcvdPkts == 0 {
 		return
 	}

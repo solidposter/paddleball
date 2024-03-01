@@ -108,7 +108,7 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
-	go statsEngine(rp, &global, *jsonPtr, *tagPtr)
+	go statsEngine(rp, &global, *tagPtr)
 	// Send a probe to get server configuration
 	if *jsonPtr {
 		slog.Info("Starting probe of", "target", flag.Args()[0])
@@ -152,7 +152,7 @@ func trapper(global *packetStats) {
 	<-cs
 
 	fmt.Println()
-	statsPrint(global, false, 0, 0, "pickleball") // no need for JSON here
+	statsPrint(global, 0, 0, "pickleball")
 	fmt.Println()
 	os.Exit(0)
 }

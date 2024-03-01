@@ -42,7 +42,7 @@ func main() {
 	bytePtr := flag.Int("b", 384, "payload size")
 	jsonPtr := flag.Bool("j", false, "print in JSON format")
 	tagPtr := flag.String("t", "pickleball", "tag to use in logging")
-	versPtr := flag.Bool("v", false, "print version info")
+	versPtr := flag.Bool("V", false, "print version info")
 	flag.Parse()
 
 	if *versPtr {

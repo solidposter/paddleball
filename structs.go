@@ -10,31 +10,31 @@ type packetStats struct {
 
 type report struct {
 	Received int64
-	Dropped  int64
+	Drops    int64
 	//DroppedPercent        float64
-	Duplicates int64
-	Reordered  int64
+	Dups      int64
+	Reordered int64
 	//ReorderedPercent      float64
-	AverageRTT      time.Duration
-	LowestRTT       time.Duration
-	HighestRTT      time.Duration
-	PBQueueDropped  int64
-	PBQueueLength   int
-	PBQueueCapacity int
+	AvgRTT       time.Duration
+	LowRTT       time.Duration
+	HighRTT      time.Duration
+	PBQueueDrops int64
+	PBQueueLen   int
+	PBQueueCap   int
 }
 
 // provides an incomplete report (missing queue lengths)
 func (s packetStats) Report() report {
 	var r report
 	r.Received = s.rcvdPkts
-	r.Dropped = s.dropPkts
+	r.Drops = s.dropPkts
 	//r.DroppedPercent = float64(s.dropPkts) / float64(s.rcvdPkts+s.dropPkts) * 100
-	r.Duplicates = s.dupPkts
+	r.Dups = s.dupPkts
 	r.Reordered = s.reordPkts
 	//r.ReorderedPercent = float64(s.reordPkts) / float64(s.rcvdPkts+s.dropPkts) * 100
-	r.LowestRTT = s.minRtt
-	r.HighestRTT = s.maxRtt
-	r.AverageRTT = time.Duration(float64(s.totRtt) / float64(s.rcvdPkts))
-	r.PBQueueDropped = s.pbdropPkts
+	r.LowRTT = s.minRtt
+	r.HighRTT = s.maxRtt
+	r.AvgRTT = time.Duration(float64(s.totRtt) / float64(s.rcvdPkts))
+	r.PBQueueDrops = s.pbdropPkts
 	return r
 }

@@ -157,8 +157,8 @@ func statsPrint(stats *packetStats, qlen int, qcap int) {
 	}
 	rep := stats.Report()
 	//rep.Tag = tag
-	rep.PBQueueLength = qlen
-	rep.PBQueueCapacity = qcap
+	rep.PBQueueLen = qlen
+	rep.PBQueueCap = qcap
 
 	slog.Info("stats", "report", rep)
 }

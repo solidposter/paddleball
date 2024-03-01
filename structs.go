@@ -9,7 +9,6 @@ type packetStats struct {
 }
 
 type report struct {
-	//Tag      string
 	Received int64
 	Dropped  int64
 	//DroppedPercent        float64
@@ -24,7 +23,7 @@ type report struct {
 	PBQueueCapacity int
 }
 
-// provides an incomplete report (missing tag and queue lengths)
+// provides an incomplete report (missing queue lengths)
 func (s packetStats) Report() report {
 	var r report
 	r.Received = s.rcvdPkts

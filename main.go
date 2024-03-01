@@ -41,7 +41,7 @@ func main() {
 	ratePtr := flag.Int("r", 10, "client pps rate")
 	bytePtr := flag.Int("b", 384, "payload size")
 	jsonPtr := flag.Bool("j", false, "print in JSON format")
-	tagPtr := flag.String("t", "pickleball", "tag to use in logging")
+	tagPtr := flag.String("t", "", "tag to use in logging")
 	versPtr := flag.Bool("V", false, "print version info")
 	flag.Parse()
 
@@ -51,14 +51,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	// structured logger
-	var logger *slog.Logger
-	if *jsonPtr {
-		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	} else {
-		logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
-	}
-	slog.SetDefault(logger)
+	slogSetup(*jsonPtr, *tagPtr)
 
 	// start in server mode
 	if *modePtr {
@@ -108,10 +101,10 @@ func main() {
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
-	go statsEngine(rp, &global, *tagPtr)
+	go statsEngine(rp, &global)
 	// Send a probe to get server configuration
 	if *jsonPtr {
-		slog.Info("Starting probe of", "target", flag.Args()[0])
+		slog.Info("Starting probe", "target", flag.Args()[0])
 	}
 	p := newclient(65535)
 	lport, hport := p.probe(flag.Args()[0], *keyPtr)
@@ -152,7 +145,7 @@ func trapper(global *packetStats) {
 	<-cs
 
 	fmt.Println()
-	statsPrint(global, 0, 0, "pickleball")
+	statsPrint(global, 0, 0)
 	fmt.Println()
 	os.Exit(0)
 }

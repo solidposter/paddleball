@@ -9,7 +9,7 @@ type packetStats struct {
 }
 
 type report struct {
-	Tag      string
+	//Tag      string
 	Received int64
 	Dropped  int64
 	//DroppedPercent        float64

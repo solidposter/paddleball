@@ -36,8 +36,8 @@ func statsEngine(rp <-chan payload, global *packetStats) {
 			local := process(workWindow, feedWindow, serialNumbers)
 			statsUpdate(global, local)
 
-			workWindow = feedWindow  // change feed to work
-			feedWindow = []payload{} // re-init feed
+			workWindow = feedWindow // change feed to work
+			feedWindow = make([]payload, 0, cap(rp))
 
 			statsPrint(&local, len(rp), cap(rp))
 		}

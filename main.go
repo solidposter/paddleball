@@ -132,6 +132,7 @@ func main() {
 		}
 		<-ticker.C
 	}
+	ticker.Stop()
 	<-(chan int)(nil) // wait forever
 }
 

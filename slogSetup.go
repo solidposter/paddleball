@@ -15,7 +15,7 @@ func slogSetup(json bool, tag string) {
 	}
 
 	if tag != "" {
-		logger = logger.With("tag", tag)
+		logger = logger.With("Tag", tag)
 	}
 
 	slog.SetDefault(logger)

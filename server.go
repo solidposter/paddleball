@@ -22,10 +22,12 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"strings"
 )
 
 func server(port string, key int) {
 	var ebuf *bytes.Buffer
+	var ipport string
 	nbuf := make([]byte, 65536)
 
 	serverkey := int64(key)
@@ -34,7 +36,13 @@ func server(port string, key int) {
 	}
 
 	fmt.Print("Starting server mode, ")
-	pc, err := net.ListenPacket("udp", "0.0.0.0:"+port)
+	if strings.Contains(port, ":") {
+		ipport = port
+	} else {
+		ipport = "0.0.0.0:" + port
+	}
+	pc, err := net.ListenPacket("udp", ipport)
+
 	if err != nil {
 		log.Fatal("server:", err)
 	}

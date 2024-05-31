@@ -25,11 +25,11 @@ import (
 	"github.com/goccy/go-json"
 )
 
-func server(port string, key int64, lport int, hport int) {
+func server(ipport string, key int64, lport int, hport int) {
 	req := payload{}
 	nbuf := make([]byte, 65536)
 
-	conn, err := net.ListenPacket("udp", "0.0.0.0:"+port)
+	conn, err := net.ListenPacket("udp", ipport)
 	if err != nil {
 		fatal("server:" + err.Error())
 	}

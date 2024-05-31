@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -52,9 +53,19 @@ func main() {
 	// start in server mode
 	if *modePtr {
 		if len(flag.Args()) != 1 {
-			fatal("Please specify server base port as the final option")
+			fatal("Please specify server port or ip:port as the final option")
 		}
-		port := flag.Args()[0]
+
+		baseipport := flag.Args()[0]
+		var ipaddr, port string
+		if parts := strings.Split(baseipport, ":"); len(parts) == 2 {
+			ipaddr = parts[0]
+			port = parts[1]
+		} else {
+			ipaddr = "0.0.0.0"
+			port = baseipport
+		}
+
 		lport, err := strconv.Atoi(port)
 		if err != nil {
 			fatal("Invalid port: " + port)
@@ -68,7 +79,8 @@ func main() {
 		}
 		hport := lport + *clntPtr - 1
 		for i := lport; i <= hport; i++ {
-			go server(strconv.Itoa(i), serverkey, lport, hport)
+			ipport := ipaddr + ":" + strconv.Itoa(i)
+			go server(ipport, serverkey, lport, hport)
 		}
 		if lport == hport {
 			slog.Info("Starting in server mode", "key", serverkey, "lport", lport)

@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func statsEngine(rp <-chan payload, global *packetStats) {
+func statsEngine(rp <-chan payload, global *packetStats, logJson bool) {
 	serialNumbers := make(map[int64]int64) // the expected serial number for each id
 	workWindow := []payload{}              // packets to analyze
 	feedWindow := []payload{}              // insert packets
@@ -39,7 +39,7 @@ func statsEngine(rp <-chan payload, global *packetStats) {
 			workWindow = feedWindow // change feed to work
 			feedWindow = make([]payload, 0, cap(rp))
 
-			statsPrint(&local, len(rp), cap(rp))
+			statsPrint(&local, len(rp), cap(rp), logJson)
 		}
 	}
 }
@@ -151,7 +151,7 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(stats *packetStats, qlen int, qcap int) {
+func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
 	if stats.rcvdPkts == 0 {
 		return
 	}
@@ -160,7 +160,34 @@ func statsPrint(stats *packetStats, qlen int, qcap int) {
 	rep.PBQueueLen = qlen
 	rep.PBQueueCap = qcap
 
-	slog.Info("stats", "report", rep)
+	if logJson {
+		slog.Info("stats",
+			"ReceivedPackets", rep.Received,
+			"DroppedPackets", rep.Drops,
+			"DuplicatePackets", rep.Dups,
+			"ReorderedPackets", rep.Reordered,
+			"AverageRTT", rep.AvgRTT,
+			"LowestRTT", rep.LowRTT,
+			"HighestRTT", rep.HighRTT,
+			"PBQueueDroppedPackets", rep.PBQueueDrops,
+			"PBQueueLength", rep.PBQueueLen,
+			"PBQueueCapacity", rep.PBQueueCap,
+		)
+	} else {
+		slog.Info("stats",
+			"Received", rep.Received,
+			"Drops", rep.Drops,
+			"Dups", rep.Dups,
+			"Reordered", rep.Reordered,
+			"AvgRTT", rep.AvgRTT,
+			"LowRTT", rep.LowRTT,
+			"HighRTT", rep.HighRTT,
+			"PBQueueDrops", rep.PBQueueDrops,
+			"PBQueueLen", rep.PBQueueLen,
+			"PBQueueCap", rep.PBQueueCap,
+		)
+	}
+
 }
 
 func statsUpdate(global *packetStats, local packetStats) {

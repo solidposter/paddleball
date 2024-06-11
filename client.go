@@ -41,10 +41,16 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 	req := newPayload(c.id, key, 100)
 	nbuf := make([]byte, 1500)
 
-	conn, err := net.Dial("udp", addr)
-	if err != nil {
-		slog.Error("Dial() failed", "error", err)
-		os.Exit(1)
+	var conn net.Conn
+	var err error
+	for {
+		conn, err = net.Dial("udp", addr)
+		if err != nil {
+			slog.Warn("Dial() failed", "error", err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
 	defer conn.Close()
 

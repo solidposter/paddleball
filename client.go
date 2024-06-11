@@ -19,8 +19,9 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
+	"os"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -42,7 +43,8 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 
 	conn, err := net.Dial("udp", addr)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Dial() failed", "error", err)
+		os.Exit(1)
 	}
 	defer conn.Close()
 
@@ -50,14 +52,17 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 	enc := json.NewEncoder(buffer)
 	err = enc.Encode(req)
 	if err != nil {
-		log.Panic(err)
+		slog.Error("Encode() failed", "error", err)
+		os.Exit(1)
 	}
 
 	success := false // set to true on valid response
 	for {
 		_, err = conn.Write(buffer.Bytes())
 		if err != nil {
-			log.Fatal(err)
+			slog.Warn("Write failed", "error", err)
+			time.Sleep(1 * time.Second)
+			continue
 		}
 		conn.SetReadDeadline((time.Now().Add(1000 * time.Millisecond)))
 		for {
@@ -67,16 +72,17 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 				break
 			}
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("Read() failed", "error", err)
+				os.Exit(1)
 			}
 			dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
 			err = dec.Decode(&req)
 			if err != nil {
-				log.Print(err, addr)
+				slog.Warn("Decode() failed", "error", err)
 				continue
 			}
 			if req.Key != int64(key) {
-				log.Printf("Invalid key %v from %v\n", req.Key, conn.RemoteAddr().String())
+				slog.Info("Invalid key", "key", req.Key, "host", conn.RemoteAddr().String())
 				continue
 			}
 			success = true
@@ -92,7 +98,8 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 func (c *client) start(rp chan<- payload, targetIP string, targetPort string, key int, rate int, size int) {
 	conn, err := net.Dial("udp", targetIP+":"+targetPort)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("net.Dial() failed", "error", err)
+		os.Exit(1)
 	}
 	go receiver(rp, conn, key)
 	sender(c.id, conn, key, rate, size)
@@ -106,7 +113,7 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 	for {
 		length, err := conn.Read(nbuf)
 		if err != nil {
-			log.Print(err)
+			slog.Warn("Read() failed", "error", err)
 			continue
 		}
 		rts := time.Now() // receive timestamp
@@ -114,11 +121,11 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
 		err = dec.Decode(&resp)
 		if err != nil {
-			log.Print(err)
+			slog.Warn("Decode() failed", "error", err)
 			continue
 		}
 		if resp.Key != int64(key) {
-			log.Printf("Invalid key %v from %v\n", resp.Key, conn.RemoteAddr().String())
+			slog.Info("Invalid key", "key", resp.Key, "host", conn.RemoteAddr().String())
 			continue
 		}
 
@@ -143,12 +150,13 @@ func sender(id int, conn net.Conn, key int, rate int, size int) {
 		enc := json.NewEncoder(buffer)
 		err := enc.Encode(req)
 		if err != nil {
-			log.Panic(err)
+			slog.Error("Encode() failed", "error", err)
+			os.Exit(1)
 		}
 
 		_, err = conn.Write(buffer.Bytes())
 		if err != nil {
-			log.Print(err)
+			slog.Warn("Write() failed", "error", err)
 		}
 		req.Serial++
 	}

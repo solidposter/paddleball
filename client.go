@@ -78,8 +78,9 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 				break
 			}
 			if err != nil {
-				slog.Error("Read() failed", "error", err)
-				os.Exit(1)
+				slog.Warn("Read() failed", "error", err)
+				time.Sleep(1 * time.Second)
+				break
 			}
 			dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
 			err = dec.Decode(&req)

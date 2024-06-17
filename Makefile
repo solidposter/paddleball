@@ -10,6 +10,6 @@ vet:
 	go vet ./...
 
 build:
-	go build -ldflags "-s -w -X 'main.version=${VERSION}'"
+	CGO_ENABLED=0 go build -ldflags "-s -w -X 'main.version=${VERSION}'"
 
 

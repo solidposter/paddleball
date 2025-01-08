@@ -12,6 +12,7 @@ Usage of ./paddleball:
   -V	print version info
   -b int
     	payload size (default 384)
+  -e	gather extended stats, like percentiles
   -j	print in JSON format
   -k int
     	server key
@@ -39,3 +40,7 @@ paddleball -s -k 1984 -n 4 10000
 
 Example client hitting it with 400 25pps clients (10kpps):
 paddleball -k 1984 -r 25 -n 400 192.168.100:10000
+
+## Paddlequack
+
+Check out the included paddlequack package, which provides a utility for recording all paddleball metrics into a DuckDB database for future analytics.

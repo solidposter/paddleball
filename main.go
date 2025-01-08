@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/influxdata/tdigest"
 	"log/slog"
 	"math/rand"
 	"net"
@@ -41,6 +42,7 @@ func main() {
 	jsonPtr := flag.Bool("j", false, "print in JSON format")
 	tagPtr := flag.String("t", "", "tag to use in logging")
 	versPtr := flag.Bool("V", false, "print version info")
+	extendedStatsPtr := flag.Bool("e", false, "gather extended stats, like percentiles")
 	flag.Parse()
 
 	if *versPtr {
@@ -103,13 +105,19 @@ func main() {
 	}
 
 	// Global information and statistics
-	global := packetStats{}
+	global := packetStats{
+		reportJSON: *jsonPtr,
+	}
+	if *extendedStatsPtr {
+		// Initialize gathering quantiles for extended statistics
+		global.quantiles = tdigest.New()
+	}
 	// catch CTRL+C
 	go trapper(&global)
 
 	// start statistics engine
 	rp := make(chan payload, (*ratePtr)*(*clntPtr)*2) // buffer return payload up to two second
-	go statsEngine(rp, &global, *jsonPtr)
+	go statsEngine(rp, &global)
 	// Send a probe to get server configuration
 	if *jsonPtr {
 		slog.Info("Starting probe", "target", flag.Args()[0])
@@ -154,7 +162,7 @@ func trapper(global *packetStats) {
 	<-cs
 
 	fmt.Println()
-	statsPrint(global, 0, 0, false)
+	statsPrint(global, 0, 0, "globalstats")
 	fmt.Println()
 	os.Exit(0)
 }

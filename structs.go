@@ -1,11 +1,15 @@
 package main
 
-import "time"
+import (
+	"time"
+	"github.com/influxdata/tdigest"
+)
 
 type packetStats struct {
 	dropPkts, dupPkts, reordPkts, rcvdPkts int64
 	pbdropPkts                             int64
 	minRtt, maxRtt, totRtt                 time.Duration
+	quantiles							   *tdigest.TDigest
 }
 
 type report struct {
@@ -18,13 +22,15 @@ type report struct {
 	AvgRTT       time.Duration
 	LowRTT       time.Duration
 	HighRTT      time.Duration
+	P90RTT		 time.Duration
+	P99RTT		 time.Duration
 	PBQueueDrops int64
 	PBQueueLen   int
 	PBQueueCap   int
 }
 
 // provides an incomplete report (missing queue lengths)
-func (s packetStats) Report() report {
+func (s *packetStats) Report() *report {
 	var r report
 	r.Received = s.rcvdPkts
 	r.Drops = s.dropPkts
@@ -36,5 +42,9 @@ func (s packetStats) Report() report {
 	r.HighRTT = s.maxRtt
 	r.AvgRTT = time.Duration(float64(s.totRtt) / float64(s.rcvdPkts))
 	r.PBQueueDrops = s.pbdropPkts
-	return r
+	if s.quantiles != nil {
+		r.P90RTT = time.Duration(s.quantiles.Quantile(0.90))
+		r.P99RTT = time.Duration(s.quantiles.Quantile(0.99))
+	}
+	return &r
 }

@@ -28,6 +28,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"github.com/influxdata/tdigest"
 )
 
 var version string // Populated at build time
@@ -41,6 +42,7 @@ func main() {
 	jsonPtr := flag.Bool("j", false, "print in JSON format")
 	tagPtr := flag.String("t", "", "tag to use in logging")
 	versPtr := flag.Bool("V", false, "print version info")
+	extendedStatsPtr := flag.Bool("e", false, "gather extended stats, like percentiles")
 	flag.Parse()
 
 	if *versPtr {
@@ -104,6 +106,10 @@ func main() {
 
 	// Global information and statistics
 	global := packetStats{}
+	if *extendedStatsPtr {
+		// Initialize gathering quantiles for extended statistics
+		global.quantiles = tdigest.New()
+	}
 	// catch CTRL+C
 	go trapper(&global)
 

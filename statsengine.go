@@ -19,6 +19,7 @@ package main
 import (
 	"log/slog"
 	"time"
+	"github.com/influxdata/tdigest"
 )
 
 func statsEngine(rp <-chan payload, global *packetStats, logJson bool) {
@@ -27,25 +28,29 @@ func statsEngine(rp <-chan payload, global *packetStats, logJson bool) {
 	feedWindow := []payload{}              // insert packets
 
 	ticker := time.NewTicker(time.Second)
+	extendedStats := global.quantiles != nil
 
 	for {
 		select {
 		case message := <-rp:
 			feedWindow = append(feedWindow, message)
 		case <-ticker.C:
-			local := process(workWindow, feedWindow, serialNumbers)
+			local := process(workWindow, feedWindow, serialNumbers, extendedStats)
 			statsUpdate(global, local)
 
 			workWindow = feedWindow // change feed to work
 			feedWindow = make([]payload, 0, cap(rp))
 
-			statsPrint(&local, len(rp), cap(rp), logJson)
+			statsPrint(local, len(rp), cap(rp), logJson)
 		}
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64) packetStats {
+func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64, extendedStats bool) *packetStats {
 	local := packetStats{}
+	if extendedStats {
+		local.quantiles = tdigest.New()
+	}
 
 	// Check workWindow for the lowest serial numbers for each Id.
 	// Update the expected serial numbers and return the number
@@ -98,7 +103,7 @@ func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64
 		local.dupPkts = local.dupPkts + findPacket(serialNumbers, workWindow, feedWindow, position+1, message.Id)
 		serialNumbers[message.Id]++
 	}
-	return local
+	return &local
 }
 
 func fastForward(serialNumbers map[int64]int64, workWindow []payload) int64 {
@@ -169,6 +174,8 @@ func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
 			"AverageRTT", float64(rep.AvgRTT)/1000000,
 			"LowestRTT", float64(rep.LowRTT)/1000000,
 			"HighestRTT", float64(rep.HighRTT)/1000000,
+			"P90RTT", float64(rep.P90RTT)/1000000,
+			"P99RTT", float64(rep.P99RTT)/1000000,
 			"PBQueueDroppedPackets", rep.PBQueueDrops,
 			"PBQueueLength", rep.PBQueueLen,
 			"PBQueueCapacity", rep.PBQueueCap,
@@ -182,15 +189,16 @@ func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
 			"AvgRTT", rep.AvgRTT,
 			"LowRTT", rep.LowRTT,
 			"HighRTT", rep.HighRTT,
+			"P90RTT", rep.P90RTT,
+			"P99RTT", rep.P99RTT,
 			"PBQueueDrops", rep.PBQueueDrops,
 			"PBQueueLen", rep.PBQueueLen,
 			"PBQueueCap", rep.PBQueueCap,
 		)
 	}
-
 }
 
-func statsUpdate(global *packetStats, local packetStats) {
+func statsUpdate(global *packetStats, local *packetStats) {
 	global.dropPkts = global.dropPkts + local.dropPkts
 	global.dupPkts = global.dupPkts + local.dupPkts
 	global.reordPkts = global.reordPkts + local.reordPkts
@@ -201,6 +209,9 @@ func statsUpdate(global *packetStats, local packetStats) {
 	}
 	if local.maxRtt > global.maxRtt {
 		global.maxRtt = local.maxRtt
+	}
+	if global.quantiles != nil && local.quantiles != nil {
+		global.quantiles.Merge(local.quantiles)
 	}
 
 	global.pbdropPkts = global.pbdropPkts + local.pbdropPkts
@@ -215,5 +226,8 @@ func updateRtt(message payload, local *packetStats) {
 	}
 	if rtt > local.maxRtt {
 		local.maxRtt = rtt
+	}
+	if local.quantiles != nil {
+		local.quantiles.Add(float64(rtt), 1)
 	}
 }

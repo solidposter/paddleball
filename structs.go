@@ -1,15 +1,16 @@
 package main
 
 import (
-	"time"
 	"github.com/influxdata/tdigest"
+	"time"
 )
 
 type packetStats struct {
 	dropPkts, dupPkts, reordPkts, rcvdPkts int64
 	pbdropPkts                             int64
 	minRtt, maxRtt, totRtt                 time.Duration
-	quantiles							   *tdigest.TDigest
+	quantiles                              *tdigest.TDigest
+	reportJSON                             bool
 }
 
 type report struct {
@@ -22,8 +23,8 @@ type report struct {
 	AvgRTT       time.Duration
 	LowRTT       time.Duration
 	HighRTT      time.Duration
-	P90RTT		 time.Duration
-	P99RTT		 time.Duration
+	P90RTT       time.Duration
+	P99RTT       time.Duration
 	PBQueueDrops int64
 	PBQueueLen   int
 	PBQueueCap   int
@@ -42,7 +43,7 @@ func (s *packetStats) Report() *report {
 	r.HighRTT = s.maxRtt
 	r.AvgRTT = time.Duration(float64(s.totRtt) / float64(s.rcvdPkts))
 	r.PBQueueDrops = s.pbdropPkts
-	if s.quantiles != nil {
+	if s.quantiles != nil && s.rcvdPkts > 0 {
 		r.P90RTT = time.Duration(s.quantiles.Quantile(0.90))
 		r.P99RTT = time.Duration(s.quantiles.Quantile(0.99))
 	}

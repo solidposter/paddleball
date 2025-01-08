@@ -17,12 +17,12 @@ package main
 //
 
 import (
+	"github.com/influxdata/tdigest"
 	"log/slog"
 	"time"
-	"github.com/influxdata/tdigest"
 )
 
-func statsEngine(rp <-chan payload, global *packetStats, logJson bool) {
+func statsEngine(rp <-chan payload, global *packetStats) {
 	serialNumbers := make(map[int64]int64) // the expected serial number for each id
 	workWindow := []payload{}              // packets to analyze
 	feedWindow := []payload{}              // insert packets
@@ -36,12 +36,13 @@ func statsEngine(rp <-chan payload, global *packetStats, logJson bool) {
 			feedWindow = append(feedWindow, message)
 		case <-ticker.C:
 			local := process(workWindow, feedWindow, serialNumbers, extendedStats)
+			local.reportJSON = global.reportJSON
 			statsUpdate(global, local)
 
 			workWindow = feedWindow // change feed to work
 			feedWindow = make([]payload, 0, cap(rp))
 
-			statsPrint(local, len(rp), cap(rp), logJson)
+			statsPrint(local, len(rp), cap(rp), "stats")
 		}
 	}
 }
@@ -156,7 +157,7 @@ func findPacket(serialNumbers map[int64]int64, workWindow []payload, feedWindow 
 	return n
 }
 
-func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
+func statsPrint(stats *packetStats, qlen int, qcap int, statsType string) {
 	if stats.rcvdPkts == 0 {
 		return
 	}
@@ -165,8 +166,8 @@ func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
 	rep.PBQueueLen = qlen
 	rep.PBQueueCap = qcap
 
-	if logJson {
-		slog.Info("stats",
+	if stats.reportJSON {
+		slog.Info(statsType,
 			"ReceivedPackets", rep.Received,
 			"DroppedPackets", rep.Drops,
 			"DuplicatePackets", rep.Dups,
@@ -181,7 +182,7 @@ func statsPrint(stats *packetStats, qlen int, qcap int, logJson bool) {
 			"PBQueueCapacity", rep.PBQueueCap,
 		)
 	} else {
-		slog.Info("stats",
+		slog.Info(statsType,
 			"Received", rep.Received,
 			"Drops", rep.Drops,
 			"Dups", rep.Dups,

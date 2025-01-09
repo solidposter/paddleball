@@ -23,4 +23,6 @@ vet:
 build:
 	CGO_ENABLED=0 go build -ldflags "-s -w -X 'main.version=${VERSION}'" -o $(OUTPUT_NAME)
 
-
+buildquack:
+	# DuckDB support needs CGO enabled
+	CGO_ENABLED=1 go build -ldflags "-X 'main.version=${VERSION}'" -o $(OUTPUT_NAME)

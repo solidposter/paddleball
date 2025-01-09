@@ -35,7 +35,7 @@ func statsEngine(rp <-chan payload, global *packetStats) {
 		case message := <-rp:
 			feedWindow = append(feedWindow, message)
 		case <-ticker.C:
-			local := process(workWindow, feedWindow, serialNumbers, extendedStats)
+			local := process(workWindow, feedWindow, serialNumbers, extendedStats, global.quack)
 			local.reportJSON = global.reportJSON
 			statsUpdate(global, local)
 
@@ -47,8 +47,9 @@ func statsEngine(rp <-chan payload, global *packetStats) {
 	}
 }
 
-func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64, extendedStats bool) *packetStats {
+func process(workWindow []payload, feedWindow []payload, serialNumbers map[int64]int64, extendedStats bool, quack *QuackStats) *packetStats {
 	local := packetStats{}
+	local.quack = quack
 	if extendedStats {
 		local.quantiles = tdigest.New()
 	}
@@ -196,6 +197,9 @@ func statsPrint(stats *packetStats, qlen int, qcap int, statsType string) {
 			"PBQueueLen", rep.PBQueueLen,
 			"PBQueueCap", rep.PBQueueCap,
 		)
+	}
+	if stats.quack != nil {
+		stats.quack.StoreReport(rep, statsType == "stats")
 	}
 }
 

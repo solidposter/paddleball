@@ -42,6 +42,7 @@ func main() {
 	jsonPtr := flag.Bool("j", false, "print in JSON format")
 	tagPtr := flag.String("t", "", "tag to use in logging")
 	versPtr := flag.Bool("V", false, "print version info")
+	quackPtr := flag.String("d", "", "file name of a DuckDB database where to record all measurements (requires paddleball with DuckDB support compiled in)")
 	extendedStatsPtr := flag.Bool("e", false, "gather extended stats, like percentiles")
 	flag.Parse()
 
@@ -103,6 +104,23 @@ func main() {
 	if *ratePtr < 1 {
 		fatal("client rate below 1 pps not supported")
 	}
+	var quack *QuackStats
+	if *quackPtr != "" {
+		// Initialise quack (DuckDB resources)
+		var err error
+		quack, err = NewQuack(*quackPtr)
+		if err != nil {
+			slog.Error(err.Error())
+			fatal("Error initialising DuckDB resources")
+		}
+		quack.Tag = *tagPtr
+	}
+	defer func() {
+		// Close up quack resources
+		if quack != nil {
+			quack.Close()
+		}
+	}()
 
 	// Global information and statistics
 	global := packetStats{
@@ -111,6 +129,9 @@ func main() {
 	if *extendedStatsPtr {
 		// Initialize gathering quantiles for extended statistics
 		global.quantiles = tdigest.New()
+	}
+	if quack != nil {
+		global.quack = quack
 	}
 	// catch CTRL+C
 	go trapper(&global)
@@ -164,6 +185,9 @@ func trapper(global *packetStats) {
 	fmt.Println()
 	statsPrint(global, 0, 0, "globalstats")
 	fmt.Println()
+	if global.quack != nil {
+		global.quack.Close()
+	}
 	os.Exit(0)
 }
 

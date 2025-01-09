@@ -139,7 +139,7 @@ func main() {
 	//
 	slogSetup()
 	// Register channel for stop processing
-	cStop := make(chan os.Signal)
+	cStop := make(chan os.Signal, 5)
 	signal.Notify(cStop, syscall.SIGINT, syscall.SIGTERM)
 	// Open stdin and start reading lines from it
 	outlines := bufio.NewScanner(os.Stdin)

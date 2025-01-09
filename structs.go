@@ -11,6 +11,7 @@ type packetStats struct {
 	minRtt, maxRtt, totRtt                 time.Duration
 	quantiles                              *tdigest.TDigest
 	reportJSON                             bool
+	quack                                  *QuackStats
 }
 
 type report struct {

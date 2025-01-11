@@ -17,31 +17,36 @@ package main
 //
 
 import (
-	"bytes"
+	//"bytes"
 	"log/slog"
 	"net"
 	"time"
-
-	"github.com/goccy/go-json"
+	//"encoding/gob"
+	//"github.com/goccy/go-json"
 )
 
 func server(ipport string, key int64, lport int, hport int) {
 	req := payload{}
-	nbuf := make([]byte, 65536)
+	var err error
+	var conn net.PacketConn
 
-	conn, err := net.ListenPacket("udp", ipport)
+	conn, err = net.ListenPacket("udp", ipport)
 	if err != nil {
 		fatal("server:" + err.Error())
 	}
+
+	packetBuffer := NewWritePositionBuffer(65536)
+
+	var addr net.Addr
 	for {
-		length, addr, err := conn.ReadFrom(nbuf)
+		packetBuffer.WritePos, addr, err = conn.ReadFrom(packetBuffer.Data)
 		if err != nil {
 			slog.Error(err.Error())
 			continue
 		}
 
-		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
-		err = dec.Decode(&req)
+		err = packetBuffer.UnmarshalPayload(&req)
+		packetBuffer.Reset()
 		if err != nil {
 			slog.Error("error", "message", err, "addr", addr)
 			continue
@@ -50,17 +55,17 @@ func server(ipport string, key int64, lport int, hport int) {
 			continue
 		}
 
-		req.Sts = time.Now()
-		req.Lport = lport
-		req.Hport = hport
-		buffer := new(bytes.Buffer)
-		enc := json.NewEncoder(buffer)
-		err = enc.Encode(req)
+		req.Sts = time.Now().UnixNano()
+		req.Lport = int64(lport)
+		req.Hport = int64(hport)
+
+		err = req.MarshalPayload(packetBuffer)
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		_, err = conn.WriteTo(buffer.Bytes(), addr)
+		_, err = conn.WriteTo(packetBuffer.Data[:packetBuffer.WritePos], addr)
+		packetBuffer.Reset()
 		if err != nil {
 			slog.Error(err.Error())
 			continue

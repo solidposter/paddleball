@@ -17,14 +17,11 @@ package main
 //
 
 import (
-	"bytes"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"time"
-
-	"github.com/goccy/go-json"
 )
 
 type client struct {
@@ -39,7 +36,6 @@ func newclient(id int) *client {
 
 func (c *client) probe(addr string, key int) (lport, hport int) {
 	req := newPayload(c.id, key, 100)
-	nbuf := make([]byte, 1500)
 
 	var conn net.Conn
 	var err error
@@ -54,9 +50,8 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 	}
 	defer conn.Close()
 
-	buffer := new(bytes.Buffer)
-	enc := json.NewEncoder(buffer)
-	err = enc.Encode(req)
+	packetBuffer := NewWritePositionBuffer(65535)
+	err = req.MarshalPayload(packetBuffer)
 	if err != nil {
 		slog.Error("Encode() failed", "error", err)
 		os.Exit(1)
@@ -64,7 +59,8 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 
 	success := false // set to true on valid response
 	for {
-		_, err = conn.Write(buffer.Bytes())
+		_, err = conn.Write(packetBuffer.Data[:packetBuffer.WritePos])
+		packetBuffer.Reset()
 		if err != nil {
 			slog.Warn("Write failed", "error", err)
 			time.Sleep(1 * time.Second)
@@ -72,7 +68,7 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 		}
 		conn.SetReadDeadline((time.Now().Add(1000 * time.Millisecond)))
 		for {
-			length, err := conn.Read(nbuf)
+			packetBuffer.WritePos, err = conn.Read(packetBuffer.Data)
 			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				fmt.Print(".")
 				break
@@ -82,14 +78,13 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 				time.Sleep(1 * time.Second)
 				break
 			}
-			dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
-			err = dec.Decode(&req)
+			err = packetBuffer.UnmarshalPayload(&req)
 			if err != nil {
 				slog.Warn("Decode() failed", "error", err)
 				continue
 			}
 			if req.Key != int64(key) {
-				slog.Info("Invalid key", "key", req.Key, "host", conn.RemoteAddr().String())
+				slog.Info("Invalid key on probe", "key", req.Key, "host", conn.RemoteAddr().String())
 				continue
 			}
 			success = true
@@ -99,7 +94,7 @@ func (c *client) probe(addr string, key int) (lport, hport int) {
 			break
 		}
 	}
-	return req.Lport, req.Hport
+	return int(req.Lport), int(req.Hport)
 }
 
 func (c *client) start(rp chan<- payload, targetIP string, targetPort string, key int, rate int, size int) {
@@ -113,30 +108,32 @@ func (c *client) start(rp chan<- payload, targetIP string, targetPort string, ke
 }
 
 func receiver(rp chan<- payload, conn net.Conn, key int) {
-	nbuf := make([]byte, 65536)
 	resp := payload{}
 	pbdrop := 0 // drop counter
+	packetBuffer := NewWritePositionBuffer(65535)
+	var err error
+	var rts time.Time
 
 	for {
-		length, err := conn.Read(nbuf)
+		packetBuffer.WritePos, err = conn.Read(packetBuffer.Data)
 		if err != nil {
 			slog.Warn("Read() failed", "error", err)
 			continue
 		}
-		rts := time.Now() // receive timestamp
+		rts = time.Now() // receive timestamp
 
-		dec := json.NewDecoder(bytes.NewBuffer(nbuf[:length]))
-		err = dec.Decode(&resp)
+		err = packetBuffer.UnmarshalPayload(&resp)
+		packetBuffer.Reset()
 		if err != nil {
 			slog.Warn("Decode() failed", "error", err)
 			continue
 		}
 		if resp.Key != int64(key) {
-			slog.Info("Invalid key", "key", resp.Key, "host", conn.RemoteAddr().String())
+			slog.Info("Invalid key on receiver", "key", resp.Key, "host", conn.RemoteAddr().String())
 			continue
 		}
 
-		resp.Rts = rts
+		resp.Rts = rts.UnixNano()
 		resp.Pbdrop = int64(pbdrop) // copy the drop counter to the packet
 		select {
 		case rp <- resp: // put the packet in the channel
@@ -151,17 +148,19 @@ func receiver(rp chan<- payload, conn net.Conn, key int) {
 func sender(id int, conn net.Conn, key int, rate int, size int) {
 	req := newPayload(id, key, size)
 	ticker := time.NewTicker(time.Duration(1000000000/rate) * time.Nanosecond)
+	var tickerTime time.Time
+	packetBuffer := NewWritePositionBuffer(65535)
 	for {
-		req.Cts = <-ticker.C
-		buffer := new(bytes.Buffer)
-		enc := json.NewEncoder(buffer)
-		err := enc.Encode(req)
+		tickerTime = <-ticker.C
+		req.Cts = tickerTime.UnixNano()
+		err := req.MarshalPayload(packetBuffer)
 		if err != nil {
 			slog.Error("Encode() failed", "error", err)
 			os.Exit(1)
 		}
 
-		_, err = conn.Write(buffer.Bytes())
+		_, err = conn.Write(packetBuffer.Data[:packetBuffer.WritePos])
+		packetBuffer.Reset()
 		if err != nil {
 			slog.Warn("Write() failed", "error", err)
 		}

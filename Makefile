@@ -26,3 +26,6 @@ build:
 buildquack:
 	# DuckDB support needs CGO enabled
 	CGO_ENABLED=1 go build -ldflags "-X 'main.version=${VERSION}'" -o $(OUTPUT_NAME)
+
+test:
+	go test -v

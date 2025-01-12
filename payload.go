@@ -18,20 +18,20 @@ package main
 
 import (
 	"crypto/rand"
-	"time"
+	"encoding/binary"
 )
 
 type payload struct {
-	Id     int64     // client ID
-	Key    int64     // server key
-	Serial int64     // packet serial number
-	Lport  int       // Server base port
-	Hport  int       // Server highest port
-	Cts    time.Time // client timestamp
-	Sts    time.Time // server timestamp
-	Rts    time.Time // receiver timestamp
-	Pbdrop int64     // Paddleball drops
-	Data   []byte    // random data
+	Id     int64  // client ID
+	Key    int64  // server key
+	Serial int64  // packet serial number
+	Lport  int64  // Server base port
+	Hport  int64  // Server highest port
+	Cts    int64  // client timestamp
+	Sts    int64  // server timestamp
+	Rts    int64  // receiver timestamp
+	Pbdrop int64  // Paddleball drops
+	Data   []byte // random data
 }
 
 func newPayload(id int, key int, size int) payload {
@@ -41,4 +41,39 @@ func newPayload(id int, key int, size int) payload {
 	m.Data = make([]byte, size)
 	rand.Read(m.Data)
 	return m
+}
+
+func (p *payload) MarshalPayload(w *WritePositionBuffer) error {
+	var len int
+	//var err error
+	_ = binary.Write(w, binary.LittleEndian, p.Id)
+	_ = binary.Write(w, binary.LittleEndian, p.Key)
+	_ = binary.Write(w, binary.LittleEndian, p.Serial)
+	_ = binary.Write(w, binary.LittleEndian, p.Lport)
+	_ = binary.Write(w, binary.LittleEndian, p.Hport)
+	_ = binary.Write(w, binary.LittleEndian, p.Cts)
+	_ = binary.Write(w, binary.LittleEndian, p.Sts)
+	_ = binary.Write(w, binary.LittleEndian, p.Rts)
+	_ = binary.Write(w, binary.LittleEndian, p.Pbdrop)
+	len = copy(w.Data[w.WritePos:], p.Data)
+	w.WritePos += len
+	return nil
+}
+
+func (w *WritePositionBuffer) UnmarshalPayload(p *payload) error {
+	_ = binary.Read(w, binary.LittleEndian, &p.Id)
+	_ = binary.Read(w, binary.LittleEndian, &p.Key)
+	_ = binary.Read(w, binary.LittleEndian, &p.Serial)
+	_ = binary.Read(w, binary.LittleEndian, &p.Lport)
+	_ = binary.Read(w, binary.LittleEndian, &p.Hport)
+	_ = binary.Read(w, binary.LittleEndian, &p.Cts)
+	_ = binary.Read(w, binary.LittleEndian, &p.Sts)
+	_ = binary.Read(w, binary.LittleEndian, &p.Rts)
+	_ = binary.Read(w, binary.LittleEndian, &p.Pbdrop)
+	dataLength := w.WritePos - w.ReadPos
+	if dataLength != len(p.Data) {
+		p.Data = make([]byte, dataLength)
+	}
+	copy(p.Data, w.Data[w.ReadPos:w.WritePos])
+	return nil
 }

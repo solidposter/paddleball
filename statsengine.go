@@ -223,7 +223,8 @@ func statsUpdate(global *packetStats, local *packetStats) {
 }
 
 func updateRtt(message payload, local *packetStats) {
-	rtt := message.Rts.Sub(message.Cts)
+	//rtt := message.Rts.Sub(message.Cts)
+	rtt := time.Duration(message.Rts - message.Cts)
 
 	local.totRtt = local.totRtt + rtt
 	if rtt < local.minRtt || local.minRtt == 0 {
